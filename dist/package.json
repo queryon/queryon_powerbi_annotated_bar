@@ -1,0 +1,17 @@
+{
+    "version": "1.0.0",
+    "author": {"name":"Queryon","email":"bd@queryon"},
+    "resources": [
+        {
+            "resourceId": "rId0",
+            "sourceType": 5,
+            "file": "resources/firstVisual10945130E24B4D6AAD5741C12ECB533D.pbiviz.json"
+        }
+    ],
+    "visual": {"name":"firstVisual","displayName":"firstVisual","guid":"firstVisual10945130E24B4D6AAD5741C12ECB533D","visualClassName":"Visual","version":"1.0.0","description":"Annotated bar chart","supportUrl":"www.queryon.com","gitHubUrl":""},
+    "metadata": {
+        "pbivizjson": {
+            "resourceId": "rId0"
+        }
+    }  
+}
