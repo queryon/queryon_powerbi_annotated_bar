@@ -18,6 +18,7 @@ import PrimitiveValue = powerbi.PrimitiveValue;
 import Fill = powerbi.Fill;
 import * as d3 from "d3";
 import * as svgAnnotations from "d3-svg-annotation";
+import IColorPalette = powerbi.extensibility.IColorPalette;
 
 import {
   valueFormatter as vf, valueFormatter,
@@ -29,13 +30,176 @@ import DataViewCategoricalColumn = powerbi.DataViewCategoricalColumn;
 import DataViewObjects = powerbi.DataViewObject;
 import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
 
-import { VisualSettings } from "./settings";
+import { VisualSettings, dataPointSettings } from "./settings";
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import { Stringifiable, mouse } from "d3";
 import { dataViewObject } from "powerbi-visuals-utils-dataviewutils";
 
 
+// module powerbi.extensibility.visual {
+//   /**
+//  * Interface for AnnotatedBars viewmodel.
+//  *
+//  * @interface
+//  * @property {AnnotatedBarDataPoint[]} dataPoints - Set of data points the visual will render.
+//  * @property {number} dataMax                 - Maximum data value in the set of data points.
+//  */
+//   interface AnnotatedBarViewModel {
+//     dataPoints: AnnotatedBarDataPoint[];
+//     dataMax: number;
+//   };
 
+/**
+ * Interface for AnnotatedBar data points.
+ *
+ * @interface
+ * @property {number} value    - Data value for point.
+ */
+
+
+/**
+* Interface for AnnotatedBar settings.
+*
+* @interface
+* @property {{show:boolean}} enableAxis - Object property that allows axis to be enabled.
+*/
+
+/**
+* @interface
+* @property {AnnotatedBarDataPoint[]} dataPoints - Set of data points the visual will render.
+* @property {number} dataMax                 - Maximum data value in the set of data points.
+*/
+
+interface AnnotatedBarSettings {
+  enableAxis: {
+    show: boolean;
+  };
+}
+
+interface AnnotatedBarDataPoint {
+  value: any;
+  // category: any;
+  display: string;
+  displayName: string;
+  barColor: string;
+  selectionId: ISelectionId;
+};
+
+interface AnnotatedBarViewModel {
+  dataPoints: AnnotatedBarDataPoint[];
+  // settings: AnnotatedBarSettings
+  // dataMax: number;
+};
+
+/**
+ * Function that converts queried data into a view model that will be used by the visual
+ *
+ * @function
+ * @param {VisualUpdateOptions} options - Contains references to the size of the container
+ *                                        and the dataView which contains all the data
+ *                                        the visual had queried.
+ * @param {IVisualHost} host            - Contains references to the host which contains services
+ */
+function visualTransform(options: VisualUpdateOptions, host: IVisualHost): AnnotatedBarViewModel {
+  let dataViews = options.dataViews;
+
+  let defaultSettings: AnnotatedBarSettings = {
+    enableAxis: {
+      show: false,
+    }
+  };
+
+  let viewModel: AnnotatedBarViewModel = {
+    dataPoints: [],
+    // dataMax: 0,
+    // settings: defaultSettings
+
+  };
+
+
+  let objects = dataViews[0].metadata.objects;
+
+  // let annotatedBarSettings: AnnotatedBarSettings = {
+  //   enableAxis: {
+  //     show: getValue<boolean>(dataViewObject, 'enableAxis', 'show', defaultSettings.enableAxis.show),
+  //   }
+  // }
+
+
+
+  if (!dataViews
+    || !dataViews[0]
+    || !dataViews[0].categorical
+    // || !dataViews[0].categorical.categories
+    // || !dataViews[0].categorical.categories[0].source
+    || !dataViews[0].categorical.values) {
+    return viewModel;
+  }
+
+
+  let categorical = dataViews[0].categorical;
+  // let category = categorical.categories[0];
+  let dataValue = categorical.values;
+  var format: string = options.dataViews[0].categorical.values[0].source.format;
+
+  var valueFormatterFactory = vf;
+  var valueFormatter = valueFormatterFactory.create({
+    format: format,
+    formatSingleValues: true
+  });
+
+  let annotatedBarDataPoints: AnnotatedBarDataPoint[] = [];
+  let dataMax: number;
+
+  let colorPalette: IColorPalette = host.colorPalette; // host: IVisualHost
+
+  let customColors = ["rgb(186,215,57)", "rgb(0, 188, 178)", "rgb(121, 118, 118)", "rgb(248, 250, 239)", "rgb(105,161,151)", "rgb(78,205,196)"]
+  for (let i = 0, len = dataValue.length; i < len; i++) {
+    // console.log(colorPalette.getColor(dataValue.values[i]).value)
+    annotatedBarDataPoints.push({
+      // category: category,
+      value: dataValue[i].values[0],
+      display: valueFormatter.format(dataValue[i].values[0]),
+      displayName: dataValue[i].source.displayName,
+      barColor: customColors[i],
+      // barColor: !colorPalette.getColor(dataValue.values[i]).value ? customColors[i] : colorPalette.getColor(dataValue.values[i]).value,
+      selectionId: host.createSelectionIdBuilder()
+        //   .withCategory(category, i)
+        .withMeasure(dataValue[i].source.queryName)
+        .createSelectionId()
+    });
+  }
+
+  // dataMax = <number>dataValue.maxLocal;
+
+  return {
+    dataPoints: annotatedBarDataPoints,
+    // settings: annotatedBarSettings
+    // dataMax: dataMax
+  };
+}
+
+/**
+ * Gets property value for a particular object.
+ *
+ * @function
+ * @param {DataViewObjects} objects - Map of defined objects.
+ * @param {string} objectName       - Name of desired object.
+ * @param {string} propertyName     - Name of desired property.
+ * @param {T} defaultValue          - Default value of desired property.
+ */
+// export function getValue<T>(objects: DataViewObjects, objectName: string, propertyName: string, defaultValue: T): T {
+//   if (objects) {
+//     let object = objects[objectName];
+//     if (object) {
+//       let property: T = object[propertyName];
+//       if (property !== undefined) {
+//         return property;
+//       }
+//     }
+//   }
+//   return defaultValue;
+// }
 
 
 export interface DataVars {
@@ -54,6 +218,24 @@ export interface DataVars {
   dy: any;
 }
 
+// export function getCategoricalObjectValue<T>(category: DataViewCategoryColumn, index: number, objectName: string, propertyName: string, defaultValue: T): T {
+//   let categoryObjects = category.objects;
+
+//   if (categoryObjects) {
+//     let categoryObject: DataViewObject = categoryObjects[index];
+//     if (categoryObject) {
+//       let object = categoryObject[objectName];
+//       if (object) {
+//         let property: T = object[propertyName];
+//         if (property !== undefined) {
+//           return property;
+//         }
+//       }
+//     }
+//   }
+//   return defaultValue;
+// }
+
 
 export class Visual implements IVisual {
 
@@ -67,6 +249,7 @@ export class Visual implements IVisual {
   private host: IVisualHost;
   private selectionManager: ISelectionManager;
   private selectionIdBuilder: ISelectionIdBuilder;
+  private annotatedBarSettings: AnnotatedBarSettings;
 
   constructor(options: VisualConstructorOptions) {
 
@@ -76,19 +259,35 @@ export class Visual implements IVisual {
     this.host = options.host
     this.selectionIdBuilder = this.host.createSelectionIdBuilder();
     this.selectionManager = this.host.createSelectionManager();
-
-
-
   }
 
   public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
+    let objectName = options.objectName;
+    let objectEnumeration: VisualObjectInstance[] = [];
+
+    // switch (objectName) {
+    //   case 'enableAxis':
+    //     objectEnumeration.push({
+    //       objectName: objectName,
+    //       properties: {
+    //         show: this.annotatedBarSettings.enableAxis.show,
+    //       },
+    //       selector: null
+    //     });
+    // };
+
+    // return objectEnumeration;
+
     const settings: VisualSettings = this.visualSettings ||
       VisualSettings.getDefault() as VisualSettings;
     return VisualSettings.enumerateObjectInstances(settings, options);
   }
 
 
+
   public update(options: VisualUpdateOptions) {
+    let viewModel: AnnotatedBarViewModel = visualTransform(options, this.host);
+
     let datavars = []
 
     this.visualSettings = VisualSettings.parse<VisualSettings>(options.dataViews[0]);
@@ -100,81 +299,82 @@ export class Visual implements IVisual {
     let categorical = dataViews[0].categorical;
     let dataValues = categorical.values;
 
-    for (let dataValue of dataValues) {
-      let values = dataValue.values;
-      for (let i = 0, len = dataValue.values.length; i < len; i++) {
-        let selectionId = this.host.createSelectionIdBuilder()
-          // .withCategory(categorical.categories[0], i)
-          // .withMeasure(dataValue.source.queryName)
-          .withSeries(categorical.values, categorical.values[i])
-          .createSelectionId();
-      }
-    }
-    let selectionManager = this.selectionManager;
+    // for (let dataValue of dataValues) {
+    //   let values = dataValue.values;
+    //   for (let i = 0, len = dataValue.values.length; i < len; i++) {
+    //     let selectionId = this.host.createSelectionIdBuilder()
+    //       // .withCategory(categorical.categories[0], i)
+    //       // .withMeasure(dataValue.source.queryName)
+    //       .withSeries(categorical.values, categorical.values[i])
+    //       .createSelectionId();
+    //   }
+    // }
+    // let selectionManager = this.selectionManager;
 
-    this.svgGroupMain.on('click', function (d) {
-      selectionManager.select(d.selectionId).then((ids: any) => {
-        console.log(ids)
-      })
-    })
+    // this.svgGroupMain.on('click', function (d) {
+    //   selectionManager.select(d.selectionId).then((ids: any) => {
+    //     console.log(ids)
+    //   })
+    // })
 
-    var format: string = options.dataViews[0].categorical.values[0].source.format;
-
-
-    var valueFormatterFactory = vf;
-    var valueFormatter = valueFormatterFactory.create({
-      format: format,
-      formatSingleValues: true
-    });
-
-    let colorPalette = ["rgb(186,215,57)", "rgb(0, 188, 178)", "rgb(121, 118, 118)", "rgb(248, 250, 239)", "rgb(105,161,151)", "rgb(78,205,196)"]
-    options.dataViews[0].categorical.values.forEach((element, i) => {
-      let value = element.values[0]
-      let displayName = element.source.displayName
-      let roles = element.source.roles
-      for (var role in roles) {
-        this.visualSettings[role].fontSize = Math.max(10, this.visualSettings[role].fontSize)
-        this.visualSettings[role].fontSize = Math.min(25, this.visualSettings[role].fontSize)
+    // var format: string = options.dataViews[0].categorical.values[0].source.format;
 
 
-        if (this.visualSettings[role].ShowInBar) {
-          if (this.visualSettings[role].BarColor === "transparent") {
-            this.visualSettings[role].BarColor = colorPalette[i]
-            const propertiesToBePersisted: VisualObjectInstance = {
-              objectName: role,
-              selector: undefined,
-              properties: {
-                BarColor: this.visualSettings[role].BarColor
-              }
-            };
-
-            this.host.persistProperties({
-              merge: [
-                propertiesToBePersisted
-              ]
-            });
-
-          }
-
-        } else {
-          this.visualSettings[role].BarColor = "transparent";
-        }
+    // var valueFormatterFactory = vf;
+    // var valueFormatter = valueFormatterFactory.create({
+    //   format: format,
+    //   formatSingleValues: true
+    // });
 
 
+    viewModel.dataPoints.forEach((element, i) => {
+      let value = element.value
+      let displayName = element.displayName
+      // let roles = element.roles
+      // for (var role in roles) {
+      // this.visualSettings[role].fontSize = Math.max(10, this.visualSettings[role].fontSize)
+      // this.visualSettings[role].fontSize = Math.min(25, this.visualSettings[role].fontSize)
 
-        let graphElement = {}
-        graphElement["Role"] = role
-        graphElement["Category"] = displayName;
-        graphElement["Value"] = value;
-        graphElement["Color"] = this.visualSettings[role].BarColor
-        graphElement["AnnotationColor"] = this.visualSettings[role].LabelColor;
-        graphElement["Top"] = role.includes("Top") ? true : false;
-        graphElement["Display"] = valueFormatter.format(value)
-        graphElement["AnnotationSize"] = this.visualSettings[role].fontSize;
-        graphElement["AnnotationFont"] = this.visualSettings[role].FontFamily;
 
-        datavars.push(graphElement)
-      }
+      // if (this.visualSettings[role].ShowInBar) {
+      //   if (this.visualSettings[role].BarColor === "transparent") {
+      //     this.visualSettings[role].BarColor = colorPalette[i]
+      //     const propertiesToBePersisted: VisualObjectInstance = {
+      //       objectName: role,
+      //       selector: undefined,
+      //       properties: {
+      //         BarColor: this.visualSettings[role].BarColor
+      //       }
+      //     };
+
+      //     this.host.persistProperties({
+      //       merge: [
+      //         propertiesToBePersisted
+      //       ]
+      //     });
+
+      //   }
+
+      // } else {
+      //   this.visualSettings[role].BarColor = "transparent";
+      // }
+
+
+
+      let graphElement = {}
+      // graphElement["Role"] = role
+      graphElement["Category"] = displayName;
+      graphElement["Value"] = value;
+      graphElement["Color"] = element.barColor
+      // graphElement["AnnotationColor"] = this.visualSettings[role].LabelColor;
+      // graphElement["Top"] = role.includes("Top") ? true : false;
+      graphElement["Display"] = element.display
+      graphElement["selectionId"] = element.selectionId
+      // graphElement["AnnotationSize"] = this.visualSettings[role].fontSize;
+      // graphElement["AnnotationFont"] = this.visualSettings[role].FontFamily;
+
+      datavars.push(graphElement)
+      // }
     });
 
     if (!this.visualSettings.barSettings.manualScale) {
@@ -195,7 +395,7 @@ export class Visual implements IVisual {
 
     this.renderVisual(options.viewport.width, options.viewport.height, datavars.sort((x, y) => { return y.Value - x.Value }))
 
-    this.selectionManager = this.host.createSelectionManager();
+    // this.selectionManager = this.host.createSelectionManager();
 
 
 
@@ -274,7 +474,6 @@ export class Visual implements IVisual {
       element.x = this.padding + scale(element.Value);
 
       element.y = element.Top ? 100 : 100 + this.visualSettings.barSettings.barHeight;
-
       if (!this.visualSettings.annotationSettings.stagger) {
         this.visualSettings.annotationSettings.spacing = false;
 
@@ -341,19 +540,15 @@ export class Visual implements IVisual {
         countBottom--;
       }
 
-
       // handle context menu
       this.svgGroupMain.on('contextmenu', () => {
         const mouseEvent: MouseEvent = d3.event as MouseEvent;
         const eventTarget: EventTarget = mouseEvent.target;
-        let dataPoint = d3.select(<Element>eventTarget).datum();
-        console.log(dataPoint)
-
-        // .datum();
-        // this.selectionManager.showContextMenu(dataPoint ? dataPoint.selectionId : {}, {
-        //   x: mouseEvent.clientX,
-        //   y: mouseEvent.clientY
-        // });
+        let dataPoint: any = d3.select(<Element>eventTarget).datum();
+        this.selectionManager.showContextMenu(dataPoint ? dataPoint.selectionId : {}, {
+          x: mouseEvent.clientX,
+          y: mouseEvent.clientY
+        });
         mouseEvent.preventDefault();
       });
 
@@ -362,20 +557,20 @@ export class Visual implements IVisual {
   }
 
   private updateCoord(el, role) {
-    const propertiesToBePersisted: VisualObjectInstance = {
-      objectName: role,
-      selector: undefined,
-      properties: {
-        dx: el.dx,
-        dy: el.dy
-      }
-    };
+    // const propertiesToBePersisted: VisualObjectInstance = {
+    //   objectName: role,
+    //   selector: undefined,
+    //   properties: {
+    //     dx: el.dx,
+    //     dy: el.dy
+    //   }
+    // };
 
-    this.host.persistProperties({
-      merge: [
-        propertiesToBePersisted
-      ]
-    });
+    // this.host.persistProperties({
+    //   merge: [
+    //     propertiesToBePersisted
+    //   ]
+    // });
 
   }
 
