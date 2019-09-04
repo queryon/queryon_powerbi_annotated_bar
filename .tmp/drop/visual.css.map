@@ -1,1 +1,0 @@
-{"version":3,"sources":["webpack://firstVisual10945130E24B4D6AAD5741C12ECB533D/./style/visual.less"],"names":[],"mappings":"AAAA;AACA;AACA;AACA;AACA;AACA;AACA","file":"visual.css","sourcesContent":[".annotations {\n  stroke: transparent;\n}\ncircle.handle {\n  stroke: transparent;\n  stroke-opacity: 0.4;\n}\n"],"sourceRoot":""}
