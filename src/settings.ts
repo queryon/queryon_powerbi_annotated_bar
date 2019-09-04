@@ -28,8 +28,7 @@
 
 import { dataViewObjectsParser } from "powerbi-visuals-utils-dataviewutils";
 import DataViewObjectsParser = dataViewObjectsParser.DataViewObjectsParser;
-import Annotation from "d3-svg-annotation";
-import { color } from "d3";
+
 
 // export class VisualSettings extends DataViewObjectsParser {
 //       public dataPoint: dataPointSettings = new dataPointSettings();
@@ -66,31 +65,35 @@ export class AnnotationSettings {
   public annotationStyle: string = "annotationLabel";
   public stagger: boolean = false;
   public spacing: any = 20;
-
   public editMode: boolean = false;
   public separator: string = ": ";
 
 }
 
-export class Label {
-  public LabelColor: string = "gray";
-  public FontFamily: string = "Arial";
-  public fontSize: number = 18;
-  public ShowInBar: boolean = true;
-  public BarColor: string = "transparent";
-  public dx: any = false;
-  public dy: any = false;
-  public show: boolean = false;
+// export class Label {
+//   public LabelColor: string = "gray";
+//   public FontFamily: string = "Arial";
+//   public fontSize: number = 18;
+//   public ShowInBar: boolean = true;
+//   public BarColor: string = "transparent";
+//   public dx: any = false;
+//   public dy: any = false;
+//   public show: boolean = false;
+// }
+
+export class Test {
+  public testProp: number = 12;
 }
 
 export class VisualSettings extends DataViewObjectsParser {
   public barSettings: BarSettings = new BarSettings();
   public axisSettings: AxisSettings = new AxisSettings();
   public annotationSettings: AnnotationSettings = new AnnotationSettings();
-  public TopLabel1: Label = new Label();
-  public TopLabel2: Label = new Label();
-  public TopLabel3: Label = new Label();
-  public BottomLabel1: Label = new Label();
-  public BottomLabel2: Label = new Label();
-  public BottomLabel3: Label = new Label();
+  public test: Test = new Test()
+  // public TopLabel1: Label = new Label();
+  // public TopLabel2: Label = new Label();
+  // public TopLabel3: Label = new Label();
+  // public BottomLabel1: Label = new Label();
+  // public BottomLabel2: Label = new Label();
+  // public BottomLabel3: Label = new Label();
 }
