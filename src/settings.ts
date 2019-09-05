@@ -49,7 +49,6 @@ export class dataPointSettings {
 
 export class BarSettings {
   public barHeight: number = 30;
-
   public manualScale: boolean = false;
   public barMin: any = false;
   public barMax: any = false;
@@ -81,15 +80,10 @@ export class AnnotationSettings {
 //   public show: boolean = false;
 // }
 
-export class Test {
-  public testProp: number = 12;
-}
-
 export class VisualSettings extends DataViewObjectsParser {
   public barSettings: BarSettings = new BarSettings();
   public axisSettings: AxisSettings = new AxisSettings();
   public annotationSettings: AnnotationSettings = new AnnotationSettings();
-  public test: Test = new Test()
   // public TopLabel1: Label = new Label();
   // public TopLabel2: Label = new Label();
   // public TopLabel3: Label = new Label();

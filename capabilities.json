@@ -5,6 +5,36 @@
         "kind": "Measure"
     }],
     "objects": {
+        "barColorSelector": {
+            "displayName": "Bar Colors",
+            "properties": {
+                "fill": {
+                    "displayName": "Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "annotationColorSelector": {
+            "displayName": "Annotation Colors",
+            "properties": {
+                "fill": {
+                    "displayName": "Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "annotationSettings": {
             "displayName": "Annotation Settings",
             "properties": {

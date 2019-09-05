@@ -30,7 +30,7 @@ import DataViewCategoricalColumn = powerbi.DataViewCategoricalColumn;
 import DataViewObjects = powerbi.DataViewObject;
 import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
 
-import { VisualSettings, dataPointSettings } from "./settings";
+import { VisualSettings, dataPointSettings, AxisSettings, BarSettings } from "./settings";
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import { Stringifiable, mouse } from "d3";
 import { dataViewObject } from "powerbi-visuals-utils-dataviewutils";
@@ -71,9 +71,25 @@ import { dataViewObject } from "powerbi-visuals-utils-dataviewutils";
 */
 
 interface AnnotatedBarSettings {
-  enableAxis: {
-    show: boolean;
-  };
+  annotationSettings: {
+    annotationStyle: string,
+    stagger: boolean,
+    spacing: any,
+    editMode: boolean,
+    separator: string
+  },
+  axisSettings: {
+    axis: boolean,
+    axisColor: any,
+    fontSize: number,
+    fontFamily: string
+  },
+  barSettings: {
+    barHeight: number,
+    manualScale: boolean,
+    barMin: any,
+    barMax: any
+  }
 }
 
 interface AnnotatedBarDataPoint {
@@ -83,11 +99,20 @@ interface AnnotatedBarDataPoint {
   displayName: string;
   barColor: string;
   selectionId: ISelectionId;
+  LabelColor: string
+  FontFamily: string
+  fontSize: number
+  ShowInBar: boolean
+  dx: any
+  dy: any
+  show: boolean
+  top: false
+
 };
 
 interface AnnotatedBarViewModel {
   dataPoints: AnnotatedBarDataPoint[];
-  // settings: AnnotatedBarSettings
+  settings: AnnotatedBarSettings
   // dataMax: number;
 };
 
@@ -104,26 +129,37 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
   let dataViews = options.dataViews;
 
   let defaultSettings: AnnotatedBarSettings = {
-    enableAxis: {
-      show: false,
+    annotationSettings: {
+      annotationStyle: "annotationLabel",
+      stagger: false,
+      spacing: 20,
+      editMode: false,
+      separator: ": "
+    },
+    axisSettings: {
+      axis: false,
+      axisColor: { solid: { color: 'gray' } },
+      fontSize: 12,
+      fontFamily: 'Arial'
+    },
+    barSettings: {
+      barHeight: 30,
+      manualScale: false,
+      barMin: false,
+      barMax: false
     }
   };
 
   let viewModel: AnnotatedBarViewModel = {
     dataPoints: [],
     // dataMax: 0,
-    // settings: defaultSettings
+    settings: defaultSettings
 
   };
 
 
   let objects = dataViews[0].metadata.objects;
 
-  // let annotatedBarSettings: AnnotatedBarSettings = {
-  //   enableAxis: {
-  //     show: getValue<boolean>(dataViewObject, 'enableAxis', 'show', defaultSettings.enableAxis.show),
-  //   }
-  // }
 
 
 
@@ -154,14 +190,27 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
   let colorPalette: IColorPalette = host.colorPalette; // host: IVisualHost
 
   let customColors = ["rgb(186,215,57)", "rgb(0, 188, 178)", "rgb(121, 118, 118)", "rgb(248, 250, 239)", "rgb(105,161,151)", "rgb(78,205,196)"]
+
   for (let i = 0, len = dataValue.length; i < len; i++) {
-    // console.log(colorPalette.getColor(dataValue.values[i]).value)
+    let defaultBarColor: Fill = {
+      solid: {
+        color: customColors[i]
+      }
+    }
     annotatedBarDataPoints.push({
       // category: category,
       value: dataValue[i].values[0],
       display: valueFormatter.format(dataValue[i].values[0]),
       displayName: dataValue[i].source.displayName,
-      barColor: customColors[i],
+      barColor: getCategoricalObjectValue<Fill>(categorical, i, 'barColorSelector', 'fill', defaultBarColor).solid.color,
+      LabelColor: getCategoricalObjectValue<Fill>(categorical, i, 'annotationColorSelector', 'fill', { solid: { color: "gray" } }).solid.color,
+      FontFamily: "Arial",
+      fontSize: 12,
+      ShowInBar: true,
+      dx: false,
+      dy: false,
+      show: true,
+      top: false,
       // barColor: !colorPalette.getColor(dataValue.values[i]).value ? customColors[i] : colorPalette.getColor(dataValue.values[i]).value,
       selectionId: host.createSelectionIdBuilder()
         //   .withCategory(category, i)
@@ -170,11 +219,33 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
     });
   }
 
+  let annotatedBarSettings: AnnotatedBarSettings = {
+    annotationSettings: {
+      stagger: getValue<boolean>(objects, 'annotationSettings', 'stagger', defaultSettings.annotationSettings.stagger),
+      separator: getValue<string>(objects, 'annotationSettings', 'separator', defaultSettings.annotationSettings.separator),
+      editMode: getValue<boolean>(objects, 'annotationSettings', 'editMode', defaultSettings.annotationSettings.editMode),
+      spacing: getValue<any>(objects, 'annotationSettings', 'spacing', defaultSettings.annotationSettings.spacing),
+      annotationStyle: getValue<string>(objects, 'annotationSettings', 'annotationStyle', defaultSettings.annotationSettings.annotationStyle),
+    },
+    axisSettings: {
+      axis: getValue<boolean>(objects, 'axisSettings', 'axis', defaultSettings.axisSettings.axis),
+      axisColor: getValue<string>(objects, 'axisSettings', 'axisColor', defaultSettings.axisSettings.axisColor),
+      fontSize: getValue<number>(objects, 'axisSettings', 'fontSize', defaultSettings.axisSettings.fontSize),
+      fontFamily: getValue<string>(objects, 'axisSettings', 'fontFamily', defaultSettings.axisSettings.fontFamily)
+    }, barSettings: {
+      barHeight: getValue<number>(objects, 'barSettings', 'barHeight', defaultSettings.barSettings.barHeight),
+      manualScale: getValue<any>(objects, 'barSettings', 'manualScale', defaultSettings.barSettings.manualScale),
+      barMin: getValue<any>(objects, 'barSettings', 'barMin', defaultSettings.barSettings.barMin),
+      barMax: getValue<any>(objects, 'barSettings', 'barMax', defaultSettings.barSettings.barMax),
+    }
+  }
+
+  // console.log(annotatedBarSettings)
   // dataMax = <number>dataValue.maxLocal;
 
   return {
     dataPoints: annotatedBarDataPoints,
-    // settings: annotatedBarSettings
+    settings: annotatedBarSettings
     // dataMax: dataMax
   };
 }
@@ -188,18 +259,18 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
  * @param {string} propertyName     - Name of desired property.
  * @param {T} defaultValue          - Default value of desired property.
  */
-// export function getValue<T>(objects: DataViewObjects, objectName: string, propertyName: string, defaultValue: T): T {
-//   if (objects) {
-//     let object = objects[objectName];
-//     if (object) {
-//       let property: T = object[propertyName];
-//       if (property !== undefined) {
-//         return property;
-//       }
-//     }
-//   }
-//   return defaultValue;
-// }
+export function getValue<T>(objects: DataViewObjects, objectName: string, propertyName: string, defaultValue: T): T {
+  if (objects) {
+    let object = objects[objectName];
+    if (object) {
+      let property: T = object[propertyName];
+      if (property !== undefined) {
+        return property;
+      }
+    }
+  }
+  return defaultValue;
+}
 
 
 export interface DataVars {
@@ -218,23 +289,25 @@ export interface DataVars {
   dy: any;
 }
 
-// export function getCategoricalObjectValue<T>(category: DataViewCategoryColumn, index: number, objectName: string, propertyName: string, defaultValue: T): T {
-//   let categoryObjects = category.objects;
+export function getCategoricalObjectValue<T>(category: any, index: number, objectName: string, propertyName: string, defaultValue: T): T {
+  let categoryObjects = category.values;
+  if (categoryObjects) {
+    let categoryObject = categoryObjects[index];
+    if (categoryObject) {
+      if (categoryObject.source.objects) {
+        let object = categoryObject.source.objects[objectName];
+        if (object) {
+          let property = object[propertyName];
+          if (property !== undefined) {
+            return property;
+          }
+        }
+      }
+    }
+  }
 
-//   if (categoryObjects) {
-//     let categoryObject: DataViewObject = categoryObjects[index];
-//     if (categoryObject) {
-//       let object = categoryObject[objectName];
-//       if (object) {
-//         let property: T = object[propertyName];
-//         if (property !== undefined) {
-//           return property;
-//         }
-//       }
-//     }
-//   }
-//   return defaultValue;
-// }
+  return defaultValue;
+}
 
 
 export class Visual implements IVisual {
@@ -250,7 +323,7 @@ export class Visual implements IVisual {
   private selectionManager: ISelectionManager;
   private selectionIdBuilder: ISelectionIdBuilder;
   private annotatedBarSettings: AnnotatedBarSettings;
-
+  private viewModel: AnnotatedBarViewModel;
   constructor(options: VisualConstructorOptions) {
 
     this.svg = d3.select(options.element).append('svg');
@@ -259,34 +332,103 @@ export class Visual implements IVisual {
     this.host = options.host
     this.selectionIdBuilder = this.host.createSelectionIdBuilder();
     this.selectionManager = this.host.createSelectionManager();
+
   }
 
   public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
+    // let objectName = options.objectName;
+    // let objectEnumeration: VisualObjectInstance[] = [];
     let objectName = options.objectName;
     let objectEnumeration: VisualObjectInstance[] = [];
 
-    // switch (objectName) {
-    //   case 'enableAxis':
-    //     objectEnumeration.push({
-    //       objectName: objectName,
-    //       properties: {
-    //         show: this.annotatedBarSettings.enableAxis.show,
-    //       },
-    //       selector: null
-    //     });
-    // };
 
-    // return objectEnumeration;
+    switch (objectName) {
+      case 'annotationSettings':
+        objectEnumeration.push({
+          objectName: objectName,
+          properties: {
+            stagger: this.viewModel.settings.annotationSettings.stagger,
+            spacing: this.viewModel.settings.annotationSettings.spacing,
+            separator: this.viewModel.settings.annotationSettings.separator,
+            editMode: this.viewModel.settings.annotationSettings.editMode,
+            annotationStyle: this.viewModel.settings.annotationSettings.annotationStyle
+          },
+          selector: null
+        });
+        break
+      case 'barSettings':
+        objectEnumeration.push({
+          objectName: objectName,
+          properties: {
+            barHeight: this.viewModel.settings.barSettings.barHeight,
+            barMin: this.viewModel.settings.barSettings.barMin,
+            barMax: this.viewModel.settings.barSettings.barMax,
+            manualScale: this.viewModel.settings.barSettings.manualScale
+          },
+          selector: null
+        });
+        break
+      case 'axisSettings':
+        objectEnumeration.push({
+          objectName: objectName,
+          properties: {
+            axis: this.viewModel.settings.axisSettings.axis,
+            axisColor: this.viewModel.settings.axisSettings.axisColor,
+            fontSize: this.viewModel.settings.axisSettings.fontSize,
+            fontFamily: this.viewModel.settings.axisSettings.fontFamily
+          },
+          selector: null
+        });
+        break
+      case 'barColorSelector':
+        for (let barDataPoint of this.viewModel.dataPoints) {
+          objectEnumeration.push({
+            objectName: objectName,
+            displayName: barDataPoint.displayName,
+            properties: {
+              fill: {
+                solid: {
+                  color: barDataPoint.barColor
+                }
+              }
+            },
+            selector: barDataPoint.selectionId.getSelector()
+          });
+        }
+        break;
+      case 'annotationColorSelector':
+        for (let barDataPoint of this.viewModel.dataPoints) {
+          objectEnumeration.push({
+            objectName: objectName,
+            displayName: barDataPoint.displayName,
+            properties: {
+              fill: {
+                solid: {
+                  color: barDataPoint.LabelColor
+                }
+              }
+            },
+            selector: barDataPoint.selectionId.getSelector()
+          });
+        }
+        break;
+    };
 
-    const settings: VisualSettings = this.visualSettings ||
-      VisualSettings.getDefault() as VisualSettings;
-    return VisualSettings.enumerateObjectInstances(settings, options);
+
+    return objectEnumeration;
+
+    // const settings: VisualSettings = this.visualSettings ||
+    //   VisualSettings.getDefault() as VisualSettings;
+
+
+    // console.log(VisualSettings.enumerateObjectInstances(settings, options))
+    // return VisualSettings.enumerateObjectInstances(settings, options);
   }
 
 
 
   public update(options: VisualUpdateOptions) {
-    let viewModel: AnnotatedBarViewModel = visualTransform(options, this.host);
+    this.viewModel = visualTransform(options, this.host);
 
     let datavars = []
 
@@ -326,8 +468,7 @@ export class Visual implements IVisual {
     //   formatSingleValues: true
     // });
 
-
-    viewModel.dataPoints.forEach((element, i) => {
+    this.viewModel.dataPoints.forEach((element, i) => {
       let value = element.value
       let displayName = element.displayName
       // let roles = element.roles
@@ -366,7 +507,7 @@ export class Visual implements IVisual {
       graphElement["Category"] = displayName;
       graphElement["Value"] = value;
       graphElement["Color"] = element.barColor
-      // graphElement["AnnotationColor"] = this.visualSettings[role].LabelColor;
+      graphElement["AnnotationColor"] = element.LabelColor;
       // graphElement["Top"] = role.includes("Top") ? true : false;
       graphElement["Display"] = element.display
       graphElement["selectionId"] = element.selectionId
@@ -443,14 +584,14 @@ export class Visual implements IVisual {
     this.svgGroupMain.append("g")
       .attr("transform", "translate(" + this.padding + "," + (100 + this.visualSettings.barSettings.barHeight) + ")")
       .call(x_axis)
-      .attr('style', `color :${this.visualSettings.axisSettings.axisColor}`)
+      .attr('style', `color :${this.viewModel.settings.axisSettings.axisColor.solid.color}`)
 
-    if (!this.visualSettings.axisSettings.axis) {
+    if (!this.viewModel.settings.axisSettings.axis) {
       this.svgGroupMain.selectAll("text").remove()
     } else {
-      this.svgGroupMain.selectAll("text").style('font-size', this.visualSettings.axisSettings.fontSize)
-      this.svgGroupMain.selectAll("text").style('stroke', this.visualSettings.axisSettings.axisColor)
-      this.svgGroupMain.selectAll("text").style('font-family', this.visualSettings.axisSettings.fontFamily)
+      this.svgGroupMain.selectAll("text").style('font-size', this.viewModel.settings.axisSettings.fontSize)
+      this.svgGroupMain.selectAll("text").style('stroke', this.viewModel.settings.axisSettings.axisColor.solid.color)
+      this.svgGroupMain.selectAll("text").style('font-family', this.viewModel.settings.axisSettings.fontFamily)
 
     }
 
@@ -460,7 +601,7 @@ export class Visual implements IVisual {
     let countBottom = datavars.filter(el => !el.Top).length;
     let countTop = datavars.filter(el => el.Top).length;;
 
-    const style = svgAnnotations[this.visualSettings.annotationSettings.annotationStyle]
+    const style = svgAnnotations[this.viewModel.settings.annotationSettings.annotationStyle]
     const type = new svgAnnotations.annotationCustomType(
       style,
       {
@@ -474,10 +615,10 @@ export class Visual implements IVisual {
       element.x = this.padding + scale(element.Value);
 
       element.y = element.Top ? 100 : 100 + this.visualSettings.barSettings.barHeight;
-      if (!this.visualSettings.annotationSettings.stagger) {
-        this.visualSettings.annotationSettings.spacing = false;
+      if (!this.viewModel.settings.annotationSettings.stagger) {
+        this.viewModel.settings.annotationSettings.spacing = false;
 
-        if (this.visualSettings.annotationSettings.editMode) {
+        if (this.viewModel.settings.annotationSettings.editMode) {
           element.dy = this.visualSettings[element.Role].dy ? this.visualSettings[element.Role].dy : element.Top ? -20 : 20;
           element.dx = this.visualSettings[element.Role].dx ? this.visualSettings[element.Role].dx : element.Value == d3.max(datavars, function (d) { return d.Value; }) ? -0.1 : 0;
         }
@@ -490,14 +631,14 @@ export class Visual implements IVisual {
       }
 
       else {
-        if (this.visualSettings.annotationSettings.editMode) {
-          element.dy = this.visualSettings[element.Role].dy ? this.visualSettings[element.Role].dy : element.Top ? this.visualSettings.annotationSettings.spacing * (-1 * countTop) : this.visualSettings.annotationSettings.spacing * countBottom;
+        if (this.viewModel.settings.annotationSettings.editMode) {
+          element.dy = this.visualSettings[element.Role].dy ? this.visualSettings[element.Role].dy : element.Top ? this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) : this.viewModel.settings.annotationSettings.spacing * countBottom;
           element.dx = this.visualSettings[element.Role].dx ? this.visualSettings[element.Role].dx : element.Value == d3.max(datavars, function (d) { return d.Value; }) ? -0.1 : 0;
         }
 
         else {
           this.updateCoord({ dx: false, dy: false }, element.Role)
-          element.dy = element.Top ? this.visualSettings.annotationSettings.spacing * (-1 * countTop) : this.visualSettings.annotationSettings.spacing * countBottom;
+          element.dy = element.Top ? this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) : this.viewModel.settings.annotationSettings.spacing * countBottom;
           element.dx = element.Value == d3.max(datavars, function (d) { return d.Value; }) ? -0.1 : 0;
         }
       }
@@ -505,7 +646,7 @@ export class Visual implements IVisual {
       annotationsData = [{
         note: {
           wrap: 900,
-          label: element.Category + this.visualSettings.annotationSettings.separator + element.Display,
+          label: element.Category + this.viewModel.settings.annotationSettings.separator + element.Display,
           bgPadding: 10
         },
         x: element.x,
@@ -521,7 +662,7 @@ export class Visual implements IVisual {
         .type(type)
 
 
-      if (this.visualSettings.annotationSettings.editMode) {
+      if (this.viewModel.settings.annotationSettings.editMode) {
         makeAnnotations.editMode(true)
           .on('dragend', (el) => {
             this.updateCoord(el, element.Role)
