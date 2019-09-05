@@ -80,10 +80,12 @@ export class AnnotationSettings {
 //   public show: boolean = false;
 // }
 
+
 export class VisualSettings extends DataViewObjectsParser {
   public barSettings: BarSettings = new BarSettings();
   public axisSettings: AxisSettings = new AxisSettings();
   public annotationSettings: AnnotationSettings = new AnnotationSettings();
+
   // public TopLabel1: Label = new Label();
   // public TopLabel2: Label = new Label();
   // public TopLabel3: Label = new Label();

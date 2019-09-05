@@ -35,6 +35,7 @@
                 }
             }
         },
+
         "annotationSettings": {
             "displayName": "Annotation Settings",
             "properties": {
