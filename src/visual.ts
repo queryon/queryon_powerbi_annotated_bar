@@ -203,9 +203,9 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       display: valueFormatter.format(dataValue[i].values[0]),
       displayName: dataValue[i].source.displayName,
       barColor: getCategoricalObjectValue<Fill>(categorical, i, 'barColorSelector', 'fill', defaultBarColor).solid.color,
-      LabelColor: getCategoricalObjectValue<Fill>(categorical, i, 'annotationColorSelector', 'fill', { solid: { color: "gray" } }).solid.color,
-      FontFamily: "Arial",
-      fontSize: 12,
+      LabelColor: getCategoricalObjectValue<Fill>(categorical, i, 'textFormatting', 'fill', { solid: { color: "gray" } }).solid.color,
+      FontFamily: getCategoricalObjectValue<string>(categorical, i, 'textFormatting', 'FontFamily', "Arial"),
+      fontSize: getCategoricalObjectValue<number>(categorical, i, 'textFormatting', 'fontSize', 12),
       ShowInBar: true,
       dx: false,
       dy: false,
@@ -356,6 +356,43 @@ export class Visual implements IVisual {
           selector: null
         });
         break
+      case 'textFormatting':
+        for (let barDataPoint of this.viewModel.dataPoints) {
+
+          //diferent naming:
+          // objectEnumeration.push({
+          //   objectName: objectName,
+          //   displayName: barDataPoint.displayName + " Annotation Color",
+          //   properties: {
+          //     fill: {
+          //       solid: {
+          //         color: barDataPoint.LabelColor
+          //       }
+          //     }
+          //   },
+          //   selector: barDataPoint.selectionId.getSelector()
+          // });
+
+          //Same Naming:  
+          objectEnumeration.push({
+            objectName: barDataPoint.displayName,
+            displayName: barDataPoint.displayName,
+            properties: {
+              FontFamily: barDataPoint.FontFamily,
+              fontSize: barDataPoint.fontSize,
+              fill: {
+                solid: {
+                  color: barDataPoint.LabelColor
+                }
+              }
+
+
+            },
+            selector: barDataPoint.selectionId.getSelector()
+          });
+
+
+        }
       case 'barSettings':
         objectEnumeration.push({
           objectName: objectName,
@@ -396,22 +433,7 @@ export class Visual implements IVisual {
           });
         }
         break;
-      case 'annotationColorSelector':
-        for (let barDataPoint of this.viewModel.dataPoints) {
-          objectEnumeration.push({
-            objectName: objectName,
-            displayName: barDataPoint.displayName,
-            properties: {
-              fill: {
-                solid: {
-                  color: barDataPoint.LabelColor
-                }
-              }
-            },
-            selector: barDataPoint.selectionId.getSelector()
-          });
-        }
-        break;
+
     };
 
 
@@ -511,8 +533,8 @@ export class Visual implements IVisual {
       // graphElement["Top"] = role.includes("Top") ? true : false;
       graphElement["Display"] = element.display
       graphElement["selectionId"] = element.selectionId
-      // graphElement["AnnotationSize"] = this.visualSettings[role].fontSize;
-      // graphElement["AnnotationFont"] = this.visualSettings[role].FontFamily;
+      graphElement["AnnotationSize"] = element.fontSize;
+      graphElement["AnnotationFont"] = element.FontFamily;
 
       datavars.push(graphElement)
       // }
