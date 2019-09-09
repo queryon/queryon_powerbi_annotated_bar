@@ -8,6 +8,12 @@
         "barColorSelector": {
             "displayName": "Bar Colors",
             "properties": {
+                "ShowInBar": {
+                    "displayName": "Show in Bar",
+                    "type": {
+                        "bool": true
+                    }
+                },
                 "fill": {
                     "displayName": "Color",
                     "type": {
@@ -22,7 +28,7 @@
             }
         },
         "textFormatting": {
-            "displayName": "Text Formatting",
+            "displayName": "Text Settings",
             "properties": {
                 "fill": {
                     "displayName": "Color",
@@ -32,6 +38,12 @@
                                 "color": true
                             }
                         }
+                    }
+                },
+                "top": {
+                    "displayName": "Text on top",
+                    "type": {
+                        "bool": true
                     }
                 },
                 "fontSize": {
@@ -147,6 +159,21 @@
                 }
             }
         },
+        "manualPosition": {
+            "displayName": "Manual Position",
+            "properties": {
+                "dx": {
+                    "type": {
+                        "numeric": true
+                    }
+                },
+                "dy": {
+                    "type": {
+                        "numeric": true
+                    }
+                }
+            }
+        },
         "annotationSettings": {
             "displayName": "Annotation Settings",
             "properties": {
@@ -227,7 +254,18 @@
                 "axis": {
                     "displayName": "Show Axis values",
                     "type": {
-                        "bool": true
+                        "enumeration": [{
+                                "displayName": "None",
+                                "value": "None"
+                            }, {
+                                "displayName": "Data",
+                                "value": "Values"
+                            }, {
+                                "displayName": "Percentage",
+                                "value": "Percentage"
+                            }
+
+                        ]
                     }
                 },
                 "fontFamily": {

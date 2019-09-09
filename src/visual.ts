@@ -79,7 +79,7 @@ interface AnnotatedBarSettings {
     separator: string
   },
   axisSettings: {
-    axis: boolean,
+    axis: any,
     axisColor: any,
     fontSize: number,
     fontFamily: string
@@ -105,8 +105,7 @@ interface AnnotatedBarDataPoint {
   ShowInBar: boolean
   dx: any
   dy: any
-  show: boolean
-  top: false
+  top: boolean
 
 };
 
@@ -137,7 +136,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       separator: ": "
     },
     axisSettings: {
-      axis: false,
+      axis: "None",
       axisColor: { solid: { color: 'gray' } },
       fontSize: 12,
       fontFamily: 'Arial'
@@ -206,11 +205,10 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       LabelColor: getCategoricalObjectValue<Fill>(categorical, i, 'textFormatting', 'fill', { solid: { color: "gray" } }).solid.color,
       FontFamily: getCategoricalObjectValue<string>(categorical, i, 'textFormatting', 'FontFamily', "Arial"),
       fontSize: getCategoricalObjectValue<number>(categorical, i, 'textFormatting', 'fontSize', 12),
-      ShowInBar: true,
-      dx: false,
-      dy: false,
-      show: true,
-      top: false,
+      ShowInBar: getCategoricalObjectValue<boolean>(categorical, i, 'barColorSelector', 'ShowInBar', true),
+      dx: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dx', false),
+      dy: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dy', false),
+      top: getCategoricalObjectValue<boolean>(categorical, i, 'textFormatting', 'top', false),
       // barColor: !colorPalette.getColor(dataValue.values[i]).value ? customColors[i] : colorPalette.getColor(dataValue.values[i]).value,
       selectionId: host.createSelectionIdBuilder()
         //   .withCategory(category, i)
@@ -228,7 +226,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       annotationStyle: getValue<string>(objects, 'annotationSettings', 'annotationStyle', defaultSettings.annotationSettings.annotationStyle),
     },
     axisSettings: {
-      axis: getValue<boolean>(objects, 'axisSettings', 'axis', defaultSettings.axisSettings.axis),
+      axis: getValue<any>(objects, 'axisSettings', 'axis', defaultSettings.axisSettings.axis),
       axisColor: getValue<string>(objects, 'axisSettings', 'axisColor', defaultSettings.axisSettings.axisColor),
       fontSize: getValue<number>(objects, 'axisSettings', 'fontSize', defaultSettings.axisSettings.fontSize),
       fontFamily: getValue<string>(objects, 'axisSettings', 'fontFamily', defaultSettings.axisSettings.fontFamily)
@@ -282,7 +280,6 @@ export interface DataVars {
   AnnotationColor: string;
   AnnotationFont: string;
   AnnotationSize: number;
-  Role: string;
   x: any;
   y: any;
   dx: any;
@@ -347,31 +344,34 @@ export class Visual implements IVisual {
         objectEnumeration.push({
           objectName: objectName,
           properties: {
-            stagger: this.viewModel.settings.annotationSettings.stagger,
-            spacing: this.viewModel.settings.annotationSettings.spacing,
+            stagger: this.viewModel.settings.annotationSettings.stagger
+          },
+          selector: null
+        });
+        if (this.viewModel.settings.annotationSettings.stagger) {
+          objectEnumeration.push({
+            objectName: objectName,
+            properties: {
+              spacing: this.viewModel.settings.annotationSettings.spacing,
+            },
+            selector: null
+          });
+        }
+
+        objectEnumeration.push({
+          objectName: objectName,
+          properties: {
             separator: this.viewModel.settings.annotationSettings.separator,
             editMode: this.viewModel.settings.annotationSettings.editMode,
             annotationStyle: this.viewModel.settings.annotationSettings.annotationStyle
           },
           selector: null
         });
+
         break
       case 'textFormatting':
         for (let barDataPoint of this.viewModel.dataPoints) {
 
-          //diferent naming:
-          // objectEnumeration.push({
-          //   objectName: objectName,
-          //   displayName: barDataPoint.displayName + " Annotation Color",
-          //   properties: {
-          //     fill: {
-          //       solid: {
-          //         color: barDataPoint.LabelColor
-          //       }
-          //     }
-          //   },
-          //   selector: barDataPoint.selectionId.getSelector()
-          // });
 
           //Same Naming:  
           objectEnumeration.push({
@@ -391,8 +391,36 @@ export class Visual implements IVisual {
             selector: barDataPoint.selectionId.getSelector()
           });
 
-
+          //diferent naming:
+          objectEnumeration.push({
+            objectName: objectName,
+            displayName: barDataPoint.displayName + "'s text on top",
+            properties: {
+              top: barDataPoint.top
+            },
+            selector: barDataPoint.selectionId.getSelector()
+          });
         }
+      case "manualPosition": {
+        for (let barDataPoint of this.viewModel.dataPoints) {
+
+          objectEnumeration.push({
+            objectName: objectName,
+            displayName: barDataPoint.displayName + " dx",
+            properties: {
+              dx: barDataPoint.dx
+            },
+            selector: barDataPoint.selectionId.getSelector()
+          }, {
+              objectName: objectName,
+              displayName: barDataPoint.displayName + " dy",
+              properties: {
+                dy: barDataPoint.dy
+              },
+              selector: barDataPoint.selectionId.getSelector()
+            });
+        }
+      }
       case 'barSettings':
         objectEnumeration.push({
           objectName: objectName,
@@ -421,16 +449,27 @@ export class Visual implements IVisual {
         for (let barDataPoint of this.viewModel.dataPoints) {
           objectEnumeration.push({
             objectName: objectName,
-            displayName: barDataPoint.displayName,
+            displayName: "Display " + barDataPoint.displayName + " in bar",
             properties: {
-              fill: {
-                solid: {
-                  color: barDataPoint.barColor
-                }
-              }
+              ShowInBar: barDataPoint.ShowInBar
             },
             selector: barDataPoint.selectionId.getSelector()
           });
+
+          if (barDataPoint.ShowInBar) {
+            objectEnumeration.push({
+              objectName: objectName,
+              displayName: barDataPoint.displayName,
+              properties: {
+                fill: {
+                  solid: {
+                    color: barDataPoint.barColor
+                  }
+                }
+              },
+              selector: barDataPoint.selectionId.getSelector()
+            });
+          }
         }
         break;
 
@@ -491,53 +530,22 @@ export class Visual implements IVisual {
     // });
 
     this.viewModel.dataPoints.forEach((element, i) => {
+      console.log("construct graph element", element.dx, element.dy)
       let value = element.value
       let displayName = element.displayName
-      // let roles = element.roles
-      // for (var role in roles) {
-      // this.visualSettings[role].fontSize = Math.max(10, this.visualSettings[role].fontSize)
-      // this.visualSettings[role].fontSize = Math.min(25, this.visualSettings[role].fontSize)
-
-
-      // if (this.visualSettings[role].ShowInBar) {
-      //   if (this.visualSettings[role].BarColor === "transparent") {
-      //     this.visualSettings[role].BarColor = colorPalette[i]
-      //     const propertiesToBePersisted: VisualObjectInstance = {
-      //       objectName: role,
-      //       selector: undefined,
-      //       properties: {
-      //         BarColor: this.visualSettings[role].BarColor
-      //       }
-      //     };
-
-      //     this.host.persistProperties({
-      //       merge: [
-      //         propertiesToBePersisted
-      //       ]
-      //     });
-
-      //   }
-
-      // } else {
-      //   this.visualSettings[role].BarColor = "transparent";
-      // }
-
-
-
       let graphElement = {}
-      // graphElement["Role"] = role
       graphElement["Category"] = displayName;
       graphElement["Value"] = value;
-      graphElement["Color"] = element.barColor
+      graphElement["Color"] = element.ShowInBar ? element.barColor : "transparent"
       graphElement["AnnotationColor"] = element.LabelColor;
-      // graphElement["Top"] = role.includes("Top") ? true : false;
+      graphElement["Top"] = element.top;
       graphElement["Display"] = element.display
       graphElement["selectionId"] = element.selectionId
       graphElement["AnnotationSize"] = element.fontSize;
       graphElement["AnnotationFont"] = element.FontFamily;
-
+      graphElement["dx"] = element.dx;
+      graphElement["dy"] = element.dy;
       datavars.push(graphElement)
-      // }
     });
 
     if (!this.visualSettings.barSettings.manualScale) {
@@ -599,8 +607,16 @@ export class Visual implements IVisual {
 
     bar.exit().remove()
 
-    var x_axis = d3.axisBottom(scale)
 
+    let x_axis
+    if (this.viewModel.settings.axisSettings.axis === "Percentage") {
+      x_axis = d3.axisBottom(d3.scaleLinear()
+        .domain([0, 100]) //percentage axis
+        .range([0, width - (this.padding * 2)]))
+        .tickFormat(d => d + "%")
+    } else {
+      x_axis = d3.axisBottom(scale)
+    }
 
     //Append group and insert axis
     this.svgGroupMain.append("g")
@@ -608,7 +624,7 @@ export class Visual implements IVisual {
       .call(x_axis)
       .attr('style', `color :${this.viewModel.settings.axisSettings.axisColor.solid.color}`)
 
-    if (!this.viewModel.settings.axisSettings.axis) {
+    if (this.viewModel.settings.axisSettings.axis === "None") {
       this.svgGroupMain.selectAll("text").remove()
     } else {
       this.svgGroupMain.selectAll("text").style('font-size', this.viewModel.settings.axisSettings.fontSize)
@@ -636,17 +652,19 @@ export class Visual implements IVisual {
     datavars.forEach(element => {
       element.x = this.padding + scale(element.Value);
 
-      element.y = element.Top ? 100 : 100 + this.visualSettings.barSettings.barHeight;
+      element.y = element.Top ? 100 : 100 + this.viewModel.settings.barSettings.barHeight;
       if (!this.viewModel.settings.annotationSettings.stagger) {
         this.viewModel.settings.annotationSettings.spacing = false;
 
         if (this.viewModel.settings.annotationSettings.editMode) {
-          element.dy = this.visualSettings[element.Role].dy ? this.visualSettings[element.Role].dy : element.Top ? -20 : 20;
-          element.dx = this.visualSettings[element.Role].dx ? this.visualSettings[element.Role].dx : element.Value == d3.max(datavars, function (d) { return d.Value; }) ? -0.1 : 0;
+          element.dy = element.dy ? element.dy : element.Top ? -20 : 20;
+          element.dx = element.dx ? element.dx : element.Value == d3.max(datavars, function (d) { return d.Value; }) ? -0.1 : 0;
         }
 
         else {
-          this.updateCoord({ dx: false, dy: false }, element.Role)
+          element.dx = false;
+          element.dy = false;
+          this.persistCoord(element)
           element.dy = element.Top ? -20 : 20;
           element.dx = element.Value == d3.max(datavars, function (d) { return d.Value; }) ? -0.1 : 0;
         }
@@ -654,12 +672,14 @@ export class Visual implements IVisual {
 
       else {
         if (this.viewModel.settings.annotationSettings.editMode) {
-          element.dy = this.visualSettings[element.Role].dy ? this.visualSettings[element.Role].dy : element.Top ? this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) : this.viewModel.settings.annotationSettings.spacing * countBottom;
-          element.dx = this.visualSettings[element.Role].dx ? this.visualSettings[element.Role].dx : element.Value == d3.max(datavars, function (d) { return d.Value; }) ? -0.1 : 0;
+          element.dy = element.dy ? element.dy : element.Top ? this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) : this.viewModel.settings.annotationSettings.spacing * countBottom;
+          element.dx = element.dx ? element.dx : element.Value == d3.max(datavars, function (d) { return d.Value; }) ? -0.1 : 0;
         }
 
         else {
-          this.updateCoord({ dx: false, dy: false }, element.Role)
+          element.dx = false;
+          element.dy = false;
+          this.persistCoord(element)
           element.dy = element.Top ? this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) : this.viewModel.settings.annotationSettings.spacing * countBottom;
           element.dx = element.Value == d3.max(datavars, function (d) { return d.Value; }) ? -0.1 : 0;
         }
@@ -687,7 +707,7 @@ export class Visual implements IVisual {
       if (this.viewModel.settings.annotationSettings.editMode) {
         makeAnnotations.editMode(true)
           .on('dragend', (el) => {
-            this.updateCoord(el, element.Role)
+            this.persistCoord(el)
           })
 
       }
@@ -719,21 +739,28 @@ export class Visual implements IVisual {
 
   }
 
-  private updateCoord(el, role) {
-    // const propertiesToBePersisted: VisualObjectInstance = {
-    //   objectName: role,
-    //   selector: undefined,
-    //   properties: {
-    //     dx: el.dx,
-    //     dy: el.dy
-    //   }
-    // };
+  private persistCoord(el) {
+    // console.log("no selection id" , el)
+    if (!el.selectionId || !el.Category) {
+      el.selectionId = this.viewModel.dataPoints.find(element => element.displayName + this.viewModel.settings.annotationSettings.separator + element.display === el.note.label).selectionId
+    }
 
-    // this.host.persistProperties({
-    //   merge: [
-    //     propertiesToBePersisted
-    //   ]
-    // });
+    console.log("dx", el.dx, "dy", el.dy)
+
+    const propertiesToBePersisted: VisualObjectInstance = {
+      objectName: "manualPosition",
+      properties: {
+        dx: el.dx,
+        dy: el.dy
+      },
+      selector: !el.selectionId ? this.viewModel.dataPoints.find(element => element.displayName + this.viewModel.settings.annotationSettings.separator + element.display === el.note.label).selectionId.getSelector() : el.selectionId.getSelector()
+    };
+
+    this.host.persistProperties({
+      merge: [
+        propertiesToBePersisted
+      ]
+    });
 
   }
 
