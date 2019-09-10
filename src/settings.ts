@@ -1,3 +1,5 @@
+//This file is not necessary at this point, as property pane's settings are being manually added in visuals.ts
+
 /*
  *  Power BI Visualizations
  *
@@ -24,72 +26,54 @@
  *  THE SOFTWARE.
  */
 
-"use strict";
+// "use strict";
 
-import { dataViewObjectsParser } from "powerbi-visuals-utils-dataviewutils";
-import DataViewObjectsParser = dataViewObjectsParser.DataViewObjectsParser;
+// import { dataViewObjectsParser } from "powerbi-visuals-utils-dataviewutils";
+// import DataViewObjectsParser = dataViewObjectsParser.DataViewObjectsParser;
 
 
-// export class VisualSettings extends DataViewObjectsParser {
-//       public dataPoint: dataPointSettings = new dataPointSettings();
-//       }
+// // export class VisualSettings extends DataViewObjectsParser {
+// //       public dataPoint: dataPointSettings = new dataPointSettings();
+// //       }
 
-export class dataPointSettings {
-  // Default color
-  public defaultColor: string = "";
-  // Show all
-  public showAllDataPoints: boolean = true;
-  // Fill
-  public fill: string = "";
-  // Color saturation
-  public fillRule: string = "";
-  // Text Size
-  public fontSize: number = 12;
-}
-
-export class BarSettings {
-  public barHeight: number = 30;
-  public manualScale: boolean = false;
-  public barMin: any = false;
-  public barMax: any = false;
-}
-
-export class AxisSettings {
-  public axis: boolean = false;
-  public axisColor: string = 'gray';
-  public fontSize: number = 12;
-  public fontFamily: string = 'Arial';
-}
-export class AnnotationSettings {
-  public annotationStyle: string = "annotationLabel";
-  public stagger: boolean = false;
-  public spacing: any = 20;
-  public editMode: boolean = false;
-  public separator: string = ": ";
-
-}
-
-// export class Label {
-//   public LabelColor: string = "gray";
-//   public FontFamily: string = "Arial";
-//   public fontSize: number = 18;
-//   public ShowInBar: boolean = true;
-//   public BarColor: string = "transparent";
-//   public dx: any = false;
-//   public dy: any = false;
-//   public show: boolean = false;
+// export class dataPointSettings {
+//   // Default color
+//   public defaultColor: string = "";
+//   // Show all
+//   public showAllDataPoints: boolean = true;
+//   // Fill
+//   public fill: string = "";
+//   // Color saturation
+//   public fillRule: string = "";
+//   // Text Size
+//   public fontSize: number = 12;
 // }
 
+// export class BarSettings {
+//   public barHeight: number = 30;
+//   public manualScale: boolean = false;
+//   public barMin: any = false;
+//   public barMax: any = false;
+// }
 
-export class VisualSettings extends DataViewObjectsParser {
-  public barSettings: BarSettings = new BarSettings();
-  public axisSettings: AxisSettings = new AxisSettings();
-  public annotationSettings: AnnotationSettings = new AnnotationSettings();
+// export class AxisSettings {
+//   public axis: boolean = false;
+//   public axisColor: string = 'gray';
+//   public fontSize: number = 12;
+//   public fontFamily: string = 'Arial';
+// }
+// export class AnnotationSettings {
+//   public annotationStyle: string = "annotationLabel";
+//   public stagger: boolean = false;
+//   public spacing: any = 20;
+//   public editMode: boolean = false;
+//   public separator: string = ": ";
 
-  // public TopLabel1: Label = new Label();
-  // public TopLabel2: Label = new Label();
-  // public TopLabel3: Label = new Label();
-  // public BottomLabel1: Label = new Label();
-  // public BottomLabel2: Label = new Label();
-  // public BottomLabel3: Label = new Label();
-}
+// }
+
+// export class VisualSettings extends DataViewObjectsParser {
+//   public barSettings: BarSettings = new BarSettings();
+//   public axisSettings: AxisSettings = new AxisSettings();
+//   public annotationSettings: AnnotationSettings = new AnnotationSettings();
+
+// }
