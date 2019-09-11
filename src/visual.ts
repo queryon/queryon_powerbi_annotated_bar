@@ -29,7 +29,7 @@ import DataViewCategoricalColumn = powerbi.DataViewCategoricalColumn;
 import DataViewObjects = powerbi.DataViewObject;
 import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
 
-import { VisualSettings, dataPointSettings, AxisSettings, BarSettings } from "./settings";
+// import { VisualSettings, dataPointSettings, AxisSettings, BarSettings } from "./settings";
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 
 //Global settings to the visual
@@ -39,9 +39,11 @@ interface AnnotatedBarSettings {
     stagger: boolean,
     spacing: any,
     editMode: boolean,
-    separator: string
+    separator: string,
+    sameAsBarColor: boolean
   },
   axisSettings: {
+    bold: boolean,
     axis: any,
     axisColor: any,
     fontSize: number,
@@ -67,6 +69,8 @@ interface AnnotatedBarDataPoint {
   ShowInBar: boolean
   dx: any
   dy: any
+  x: any
+  y: any
   top: boolean
 };
 
@@ -80,17 +84,19 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
 
   let defaultSettings: AnnotatedBarSettings = {
     annotationSettings: {
+      sameAsBarColor: false,
       annotationStyle: "annotationLabel",
-      stagger: false,
+      stagger: true,
       spacing: 20,
       editMode: false,
-      separator: ": "
+      separator: ":"
     },
     axisSettings: {
       axis: "None",
       axisColor: { solid: { color: 'gray' } },
       fontSize: 12,
-      fontFamily: 'Arial'
+      fontFamily: 'Arial',
+      bold: false
     },
     barSettings: {
       barHeight: 30,
@@ -119,40 +125,83 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
   let categorical = dataViews[0].categorical;
   let dataValues = categorical.values;
 
+  console.log(dataViews[0])
   let annotatedBarDataPoints: AnnotatedBarDataPoint[] = [];
 
   //QueryOn colors to be set as default
-  let customColors = ["rgb(186,215,57)", "rgb(0, 188, 178)", "rgb(121, 118, 118)", "rgb(248, 250, 239)", "rgb(105,161,151)", "rgb(78,205,196)"]
+  let customColors = ["rgb(186,215,57)", "rgb(0, 188, 178)", "rgb(121, 118, 118)", "rgb(248, 250, 239)", "rgb(105,161,151)", "rgb(78,205,196)", "rgb(246,255,212)", "rgb(166,197,207)", "rgb(215,204,182)", "rgb(67,158,157)", "rgb(122,141,45)", "rgb(162,157,167)"]
+  if (!categorical.categories) {
+    for (let i = 0, len = dataValues.length; i < len; i++) {
 
-  for (let i = 0, len = dataValues.length; i < len; i++) {
-
-    let defaultBarColor: Fill = {
-      solid: {
-        color: customColors[i]
+      let defaultBarColor: Fill = {
+        solid: {
+          color: customColors[i > 12 ? i - 12 : i]
+        }
       }
+
+      //getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dx', "TEST") will return TEST after drag and drop should have set correct coordinates.
+      annotatedBarDataPoints.push({
+        value: dataValues[i].values[0],
+        displayName: dataValues[i].source.displayName,
+        barColor: getCategoricalObjectValue<Fill>(categorical, i, 'barColorSelector', 'fill', defaultBarColor).solid.color,
+        LabelColor: getCategoricalObjectValue<Fill>(categorical, i, 'textFormatting', 'fill', { solid: { color: "gray" } }).solid.color,
+        FontFamily: getCategoricalObjectValue<string>(categorical, i, 'textFormatting', 'FontFamily', "Arial"),
+        fontSize: getCategoricalObjectValue<number>(categorical, i, 'textFormatting', 'fontSize', 12),
+        ShowInBar: getCategoricalObjectValue<boolean>(categorical, i, 'barColorSelector', 'ShowInBar', true),
+        dx: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dx', false),
+        dy: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dy', false),
+        x: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'x', false),
+        y: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'y', false),
+        top: getCategoricalObjectValue<boolean>(categorical, i, 'textFormatting', 'top', false),
+        selectionId: host.createSelectionIdBuilder()     //generates IDs for svg elements based on queryName
+          .withMeasure(dataValues[i].source.queryName)
+          .createSelectionId()
+      });
     }
 
-    //getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dx', "TEST") will return TEST after drag and drop should have set correct coordinates.
+  } else {
+    console.log(categorical.categories[0].values, categorical.values[0].values)
 
-    annotatedBarDataPoints.push({
-      value: dataValues[i].values[0],
-      displayName: dataValues[i].source.displayName,
-      barColor: getCategoricalObjectValue<Fill>(categorical, i, 'barColorSelector', 'fill', defaultBarColor).solid.color,
-      LabelColor: getCategoricalObjectValue<Fill>(categorical, i, 'textFormatting', 'fill', { solid: { color: "gray" } }).solid.color,
-      FontFamily: getCategoricalObjectValue<string>(categorical, i, 'textFormatting', 'FontFamily', "Arial"),
-      fontSize: getCategoricalObjectValue<number>(categorical, i, 'textFormatting', 'fontSize', 12),
-      ShowInBar: getCategoricalObjectValue<boolean>(categorical, i, 'barColorSelector', 'ShowInBar', true),
-      dx: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dx', false),
-      dy: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dy', false),
-      top: getCategoricalObjectValue<boolean>(categorical, i, 'textFormatting', 'top', false),
-      selectionId: host.createSelectionIdBuilder()     //generates IDs for svg elements based on queryName
-        .withMeasure(dataValues[i].source.queryName)
-        .createSelectionId()
-    });
+    for (let i = 0, len = categorical.categories[0].values.length; i < len; i++) {
+
+      console.log(categorical.categories[0].values[i].toString(), categorical.values[0].values[i])
+      let defaultBarColor: Fill = {
+        solid: {
+          color: customColors[i > 12 ? i - 12 : i]
+        }
+      }
+      annotatedBarDataPoints.push({
+        value: categorical.values[0].values[i],
+        displayName: categorical.categories[0].values[i].toString(),
+        barColor: getCategoricalObjectValue<Fill>(categorical, i, 'barColorSelector', 'fill', defaultBarColor).solid.color,
+        LabelColor: getCategoricalObjectValue<Fill>(categorical, i, 'textFormatting', 'fill', { solid: { color: "gray" } }).solid.color,
+        FontFamily: getCategoricalObjectValue<string>(categorical, i, 'textFormatting', 'FontFamily', "Arial"),
+        fontSize: getCategoricalObjectValue<number>(categorical, i, 'textFormatting', 'fontSize', 12),
+        ShowInBar: getCategoricalObjectValue<boolean>(categorical, i, 'barColorSelector', 'ShowInBar', true),
+        dx: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dx', false),
+        dy: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dy', false),
+        x: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'x', false),
+        y: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'y', false),
+        top: getCategoricalObjectValue<boolean>(categorical, i, 'textFormatting', 'top', false),
+
+        // barColor: defaultBarColor.solid.color,
+        // LabelColor: { solid: { color: "gray" } }.solid.color,
+        // FontFamily: "Arial",
+        // fontSize: 12,
+        // ShowInBar: true,
+        // dx: false,
+        // dy: false, x: false, y: false, top: false,
+
+        selectionId: host.createSelectionIdBuilder()     //generates IDs for svg elements based on queryName
+          .withSeries(categorical.values, categorical.values[i])
+          .createSelectionId()
+      });
+    }
   }
 
   let annotatedBarSettings: AnnotatedBarSettings = {
     annotationSettings: {
+      sameAsBarColor: getValue<boolean>(objects, 'annotationSettings', 'sameAsBarColor', defaultSettings.annotationSettings.sameAsBarColor),
       stagger: getValue<boolean>(objects, 'annotationSettings', 'stagger', defaultSettings.annotationSettings.stagger),
       separator: getValue<string>(objects, 'annotationSettings', 'separator', defaultSettings.annotationSettings.separator),
       editMode: getValue<boolean>(objects, 'annotationSettings', 'editMode', defaultSettings.annotationSettings.editMode),
@@ -160,11 +209,14 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       annotationStyle: getValue<string>(objects, 'annotationSettings', 'annotationStyle', defaultSettings.annotationSettings.annotationStyle),
     },
     axisSettings: {
+
       axis: getValue<any>(objects, 'axisSettings', 'axis', defaultSettings.axisSettings.axis),
       axisColor: getValue<string>(objects, 'axisSettings', 'axisColor', defaultSettings.axisSettings.axisColor),
       fontSize: getValue<number>(objects, 'axisSettings', 'fontSize', defaultSettings.axisSettings.fontSize),
-      fontFamily: getValue<string>(objects, 'axisSettings', 'fontFamily', defaultSettings.axisSettings.fontFamily)
-    }, barSettings: {
+      fontFamily: getValue<string>(objects, 'axisSettings', 'fontFamily', defaultSettings.axisSettings.fontFamily),
+      bold: getValue<boolean>(objects, 'axisSettings', 'bold', defaultSettings.axisSettings.bold)
+    },
+    barSettings: {
       barHeight: getValue<number>(objects, 'barSettings', 'barHeight', defaultSettings.barSettings.barHeight),
       manualScale: getValue<any>(objects, 'barSettings', 'manualScale', defaultSettings.barSettings.manualScale),
       barMin: getValue<any>(objects, 'barSettings', 'barMin', defaultSettings.barSettings.barMin),
@@ -248,7 +300,6 @@ export class Visual implements IVisual {
   private svg: d3.Selection<SVGElement, {}, HTMLElement, any>;
   private svgGroupMain: any;
   private padding: number;
-  private visualSettings: VisualSettings;
   private minScale: any;
   private maxScale: any;
   private host: IVisualHost;
@@ -279,7 +330,8 @@ export class Visual implements IVisual {
         objectEnumeration.push({
           objectName: objectName,
           properties: {
-            stagger: this.viewModel.settings.annotationSettings.stagger
+            stagger: this.viewModel.settings.annotationSettings.stagger,
+            sameAsBarColor: this.viewModel.settings.annotationSettings.sameAsBarColor
           },
           selector: null
         });
@@ -306,7 +358,20 @@ export class Visual implements IVisual {
         break
       case 'textFormatting':
         for (let barDataPoint of this.viewModel.dataPoints) {
-
+          if (!this.viewModel.settings.annotationSettings.sameAsBarColor) {
+            objectEnumeration.push({
+              objectName: objectName,
+              displayName: barDataPoint.displayName + " Color",
+              properties: {
+                fill: {
+                  solid: {
+                    color: barDataPoint.LabelColor
+                  }
+                }
+              },
+              selector: barDataPoint.selectionId.getSelector()
+            });
+          }
 
           //Same Naming:  
           objectEnumeration.push({
@@ -314,14 +379,7 @@ export class Visual implements IVisual {
             displayName: barDataPoint.displayName,
             properties: {
               FontFamily: barDataPoint.FontFamily,
-              fontSize: barDataPoint.fontSize,
-              fill: {
-                solid: {
-                  color: barDataPoint.LabelColor
-                }
-              }
-
-
+              fontSize: barDataPoint.fontSize
             },
             selector: barDataPoint.selectionId.getSelector()
           });
@@ -388,7 +446,8 @@ export class Visual implements IVisual {
             axis: this.viewModel.settings.axisSettings.axis,
             axisColor: this.viewModel.settings.axisSettings.axisColor,
             fontSize: this.viewModel.settings.axisSettings.fontSize,
-            fontFamily: this.viewModel.settings.axisSettings.fontFamily
+            fontFamily: this.viewModel.settings.axisSettings.fontFamily,
+            bold: this.viewModel.settings.axisSettings.bold
           },
           selector: null
         });
@@ -431,7 +490,8 @@ export class Visual implements IVisual {
 
   public update(options: VisualUpdateOptions) {
     this.viewModel = visualTransform(options, this.host);
-
+    let marginTop = 10,
+      marginTopStagger = 10
     let graphElements = []
 
 
@@ -455,7 +515,7 @@ export class Visual implements IVisual {
       graphElement["Category"] = displayName;
       graphElement["Value"] = value;
       graphElement["Color"] = element.ShowInBar ? element.barColor : "transparent"
-      graphElement["AnnotationColor"] = element.LabelColor;
+      graphElement["AnnotationColor"] = this.viewModel.settings.annotationSettings.sameAsBarColor && element.ShowInBar ? element.barColor : element.LabelColor;
       graphElement["Top"] = element.top;
       graphElement["Display"] = valueFormatter.format(value)
       graphElement["selectionId"] = element.selectionId
@@ -463,7 +523,14 @@ export class Visual implements IVisual {
       graphElement["AnnotationFont"] = element.FontFamily;
       graphElement["dx"] = element.dx;
       graphElement["dy"] = element.dy;
+      graphElement["x"] = element.x;
+      graphElement["y"] = element.y;
       graphElements.push(graphElement)
+
+      if (element.top) {
+        marginTop = 50
+        marginTopStagger += 30
+      }
     });
 
 
@@ -524,7 +591,7 @@ export class Visual implements IVisual {
 
         return d.Color
       })
-      .attr('y', 100)
+      .attr('y', this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop)
       .attr('height', this.viewModel.settings.barSettings.barHeight)
 
     bar.exit().remove()
@@ -542,15 +609,26 @@ export class Visual implements IVisual {
 
     //Append group and insert axis
     this.svgGroupMain.append("g")
-      .attr("transform", "translate(" + this.padding + "," + (100 + this.viewModel.settings.barSettings.barHeight) + ")")
+      .attr("transform", "translate(" + this.padding + "," + ((this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop) + this.viewModel.settings.barSettings.barHeight) + ")")
       .call(x_axis)
+      .attr('class', 'axis')
+      .attr('style', `color :${this.viewModel.settings.axisSettings.axisColor.solid.color}`)
+      .attr('style', `stroke :${this.viewModel.settings.axisSettings.axisColor.solid.color}`)
+
+    this.svgGroupMain.selectAll('path, line')
       .attr('style', `color :${this.viewModel.settings.axisSettings.axisColor.solid.color}`)
 
+    if (this.viewModel.settings.axisSettings.bold) {
+      this.svgGroupMain.classed("xAxis", false);
+    } else {
+      this.svgGroupMain.attr('class', 'xAxis')
+
+    }
     if (this.viewModel.settings.axisSettings.axis === "None") {
       this.svgGroupMain.selectAll("text").remove()
     } else {
       this.svgGroupMain.selectAll("text").style('font-size', this.viewModel.settings.axisSettings.fontSize)
-      this.svgGroupMain.selectAll("text").style('stroke', this.viewModel.settings.axisSettings.axisColor.solid.color)
+      this.svgGroupMain.selectAll("text").style('fill', this.viewModel.settings.axisSettings.axisColor.solid.color)
       this.svgGroupMain.selectAll("text").style('font-family', this.viewModel.settings.axisSettings.fontFamily)
 
     }
@@ -573,37 +651,58 @@ export class Visual implements IVisual {
 
     // handle annotations positioning
     graphElements.forEach(element => {
-      element.x = this.padding + scale(element.Value);
+      // element.x = this.padding + scale(element.Value);
 
-      element.y = element.Top ? 100 : 100 + this.viewModel.settings.barSettings.barHeight;
       if (!this.viewModel.settings.annotationSettings.stagger) {
+        // element.y = element.Top ? marginTop : marginTop + this.viewModel.settings.barSettings.barHeight;
         this.viewModel.settings.annotationSettings.spacing = false;
 
         if (this.viewModel.settings.annotationSettings.editMode) {
-          element.dy = element.dy ? element.dy : element.Top ? -20 : 20;
+          element.x = element.x ? element.x : this.padding + scale(element.Value);
+          element.y = element.y ? element.y : element.y = element.Top ? marginTop : marginTop + this.viewModel.settings.barSettings.barHeight;
+
+          element.dy = element.dy ? element.dy : element.Top ? -20 : this.viewModel.settings.axisSettings.axis === "None" ? 20 : 40;
           element.dx = element.dx ? element.dx : element.Value == d3.max(graphElements, function (d) { return d.Value; }) ? -0.1 : 0;
         }
 
         else {
           element.dx = false;
           element.dy = false;
+
+          element.x = false;
+          element.y = false;
           this.persistCoord(element) //resets coord to false so previous are deleted. Also being delayed but work fine because of if statements
-          element.dy = element.Top ? -20 : 20;
+          element.dy = element.Top ? -20 : this.viewModel.settings.axisSettings.axis === "None" ? 20 : 40;
           element.dx = element.Value == d3.max(graphElements, function (d) { return d.Value; }) ? -0.1 : 0;
+
+          element.x = this.padding + scale(element.Value);
+          element.y = element.Top ? marginTop : marginTop + this.viewModel.settings.barSettings.barHeight;
         }
       }
 
       else {
+        // element.y = element.Top ? marginTopStagger : marginTopStagger + this.viewModel.settings.barSettings.barHeight;
+
+
         if (this.viewModel.settings.annotationSettings.editMode) {
-          element.dy = element.dy ? element.dy : element.Top ? this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) : this.viewModel.settings.annotationSettings.spacing * countBottom;
+          element.x = element.x ? element.x : this.padding + scale(element.Value);
+          element.y = element.y ? element.y : element.Top ? marginTopStagger : marginTopStagger + this.viewModel.settings.barSettings.barHeight;
+
+          element.dy = element.dy ? element.dy : element.Top ? this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) : this.viewModel.settings.axisSettings.axis === "None" ? this.viewModel.settings.annotationSettings.spacing * countBottom : this.viewModel.settings.annotationSettings.spacing * countBottom + 20;
           element.dx = element.dx ? element.dx : element.Value == d3.max(graphElements, function (d) { return d.Value; }) ? -0.1 : 0;
         }
 
         else {
+          element.x = false;
+          element.y = false;
           element.dx = false;
           element.dy = false;
           this.persistCoord(element)
-          element.dy = element.Top ? this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) : this.viewModel.settings.annotationSettings.spacing * countBottom;
+
+          element.x = this.padding + scale(element.Value);
+          element.y = element.Top ? marginTopStagger : marginTopStagger + this.viewModel.settings.barSettings.barHeight;
+
+          element.dy = element.Top ? this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) : this.viewModel.settings.axisSettings.axis === "None" ? this.viewModel.settings.annotationSettings.spacing * countBottom : this.viewModel.settings.annotationSettings.spacing * countBottom + 20;
           element.dx = element.Value == d3.max(graphElements, function (d) { return d.Value; }) ? -0.1 : 0;
         }
       }
@@ -611,7 +710,7 @@ export class Visual implements IVisual {
       annotationsData = [{
         note: {
           wrap: 900,
-          label: element.Category + this.viewModel.settings.annotationSettings.separator + element.Display,
+          label: element.Category + this.viewModel.settings.annotationSettings.separator + " " + element.Display,
           bgPadding: 10
         },
         x: element.x,
@@ -666,12 +765,13 @@ export class Visual implements IVisual {
 
     const id = el.selectionId ? el.selectionId : el.id; //if SVG element, use selectionId, if annotation, use ID.
     console.log("dx", el.dx, "dy", el.dy)
-
     const propertiesToBePersisted: VisualObjectInstance = {
       objectName: "manualPosition",
       properties: {
         dx: el.dx,
-        dy: el.dy
+        dy: el.dy,
+        x: el.x,
+        y: el.y
       },
       selector: id.getSelector() //selector is necessary for finding correct dataPoint
     };

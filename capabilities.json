@@ -1,9 +1,15 @@
 {
     "dataRoles": [{
-        "displayName": "Measure Data",
-        "name": "measure",
-        "kind": "Measure"
-    }],
+            "displayName": "Measure Data",
+            "name": "measure",
+            "kind": "Measure"
+        },
+        {
+            "displayName": "Category Data",
+            "name": "category",
+            "kind": "Grouping"
+        }
+    ],
     "objects": {
         "barColorSelector": {
             "displayName": "Bar Colors",
@@ -171,12 +177,28 @@
                     "type": {
                         "numeric": true
                     }
+                },
+                "x": {
+                    "type": {
+                        "numeric": true
+                    }
+                },
+                "y": {
+                    "type": {
+                        "numeric": true
+                    }
                 }
             }
         },
         "annotationSettings": {
             "displayName": "Annotation Settings",
             "properties": {
+                "sameAsBarColor": {
+                    "displayName": "Text color same as bar color",
+                    "type": {
+                        "bool": true
+                    }
+                },
                 "annotationStyle": {
                     "displayName": "Annotation Style",
                     "type": {
@@ -201,25 +223,10 @@
                 "separator": {
                     "displayName": "Separator",
                     "type": {
-                        "enumeration": [{
-                                "displayName": ": ",
-
-                                "value": ": "
-                            },
-                            {
-                                "displayName": "-",
-                                "value": " - "
-                            }, {
-                                "displayName": "|",
-                                "value": " | "
-                            },
-                            {
-                                "displayName": "None",
-                                "value": " "
-                            }
-                        ]
+                        "text": true
                     }
                 },
+
                 "stagger": {
                     "displayName": "Stagger text",
                     "type": {
@@ -249,6 +256,12 @@
                         "formatting": {
                             "fontSize": true
                         }
+                    }
+                },
+                "bold": {
+                    "displayName": "Bold text",
+                    "type": {
+                        "bool": true
                     }
                 },
                 "axis": {
@@ -387,8 +400,6 @@
         "barSettings": {
             "displayName": "Bar Settings",
             "properties": {
-
-
                 "barHeight": {
                     "displayName": "Bar Height",
                     "type": {
@@ -420,18 +431,38 @@
     },
     "dataViewMappings": [{
         "conditions": [{
-            "measure": {
-                "min": 0,
-                "max": 6
+                "category": {
+                    "min": 0,
+                    "max": 1
+                },
+                "measure": {
+                    "min": 0,
+                    "max": 1
+                }
+            },
+            {
+                "category": {
+                    "min": 0,
+                    "max": 0
+                },
+                "measure": {
+                    "min": 1
+                }
             }
-        }],
+        ],
         "categorical": {
+            "categories": {
+                "for": {
+                    "in": "category"
+                }
+            },
             "values": {
                 "select": [{
-                    "for": {
-                        "in": "measure"
+                    "bind": {
+                        "to": "measure"
                     }
                 }]
+
             }
         }
     }]
