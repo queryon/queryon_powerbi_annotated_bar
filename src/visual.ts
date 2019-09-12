@@ -31,6 +31,7 @@ import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration
 
 // import { VisualSettings, dataPointSettings, AxisSettings, BarSettings } from "./settings";
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
+import { text } from "d3";
 
 //Global settings to the visual
 interface AnnotatedBarSettings {
@@ -38,7 +39,7 @@ interface AnnotatedBarSettings {
     annotationStyle: string,
     stagger: boolean,
     spacing: any,
-    editMode: boolean,
+    // editMode: boolean,
     separator: string,
     sameAsBarColor: boolean
   },
@@ -88,7 +89,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       annotationStyle: "annotationLabel",
       stagger: true,
       spacing: 20,
-      editMode: false,
+      // editMode: false,
       separator: ":"
     },
     axisSettings: {
@@ -125,7 +126,6 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
   let categorical = dataViews[0].categorical;
   let dataValues = categorical.values;
 
-  console.log(dataViews[0])
   let annotatedBarDataPoints: AnnotatedBarDataPoint[] = [];
 
   //QueryOn colors to be set as default
@@ -160,11 +160,9 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
     }
 
   } else {
-    console.log(categorical.categories[0].values, categorical.values[0].values)
+    // console.log(dataViews[0].metadata.objects)
+    for (let i = 0, len = Math.max(categorical.categories[0].values.length, categorical.values[0].values.length); i < len; i++) {
 
-    for (let i = 0, len = categorical.categories[0].values.length; i < len; i++) {
-
-      console.log(categorical.categories[0].values[i].toString(), categorical.values[0].values[i])
       let defaultBarColor: Fill = {
         solid: {
           color: customColors[i > 12 ? i - 12 : i]
@@ -204,7 +202,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       sameAsBarColor: getValue<boolean>(objects, 'annotationSettings', 'sameAsBarColor', defaultSettings.annotationSettings.sameAsBarColor),
       stagger: getValue<boolean>(objects, 'annotationSettings', 'stagger', defaultSettings.annotationSettings.stagger),
       separator: getValue<string>(objects, 'annotationSettings', 'separator', defaultSettings.annotationSettings.separator),
-      editMode: getValue<boolean>(objects, 'annotationSettings', 'editMode', defaultSettings.annotationSettings.editMode),
+      // editMode: getValue<boolean>(objects, 'annotationSettings', 'editMode', defaultSettings.annotationSettings.editMode),
       spacing: getValue<any>(objects, 'annotationSettings', 'spacing', defaultSettings.annotationSettings.spacing),
       annotationStyle: getValue<string>(objects, 'annotationSettings', 'annotationStyle', defaultSettings.annotationSettings.annotationStyle),
     },
@@ -259,34 +257,49 @@ export interface graphElements {
   dx: any;
   dy: any;
   selectionId: ISelectionId;
+  textWidth: number;
 }
 
 //getCategoricalObjectValue takes in categorical: all datapoints objects, dataPoint's index, object name: properties' categories, property name and default value. 
 export function getCategoricalObjectValue<T>(category: any, index: number, objectName: string, propertyName: string, defaultValue: T): T {
 
-  let categoryObjects = category.values;
-
+  let categoryObjects
+  if (!category.categories) {
+    categoryObjects = category.values;
+  }
+  else {
+    // console.log(category)
+    categoryObjects = category.categories[0]
+  }
   if (categoryObjects) {
-    let categoryObject = categoryObjects[index];
+    let categoryObject
+    if (category.categories) {
+      // console.log(categoryObjects)
+      categoryObject = categoryObjects[0];
+    } else {
+      categoryObject = categoryObjects[index];
+    }
 
     if (categoryObject) {
-      // if (objectName === "manualPosition") {
-      //   console.log("getCategoricalObjectValue", propertyName, categoryObject.source)
-      // }
-      // Bug: `categoryObject.source` doesn't have `objects` attribute, with manual position object, containing properties dx and dy. 
-      // Keep returning default value and reseting position after drag and drop 
-      if (categoryObject.source.objects) {
-        let object = categoryObject.source.objects[objectName];
+      let object
+      if (category.categories) {
+        object = categoryObject.object
+        // console.log(categoryObject)
+      } else {
+        if (categoryObject.source.objects) {
+          object = categoryObject.source.objects[objectName];
 
-        if (object) {
-
-          let property = object[propertyName];
-
-          if (property !== undefined) {
-            return property;
-          }
         }
       }
+      if (object) {
+        // console.log("obj", object)
+        let property = object[propertyName];
+
+        if (property !== undefined) {
+          return property;
+        }
+      }
+
     }
   }
 
@@ -300,6 +313,8 @@ export class Visual implements IVisual {
   private svg: d3.Selection<SVGElement, {}, HTMLElement, any>;
   private svgGroupMain: any;
   private padding: number;
+  private width: number;
+  private height: number;
   private minScale: any;
   private maxScale: any;
   private host: IVisualHost;
@@ -349,7 +364,7 @@ export class Visual implements IVisual {
           objectName: objectName,
           properties: {
             separator: this.viewModel.settings.annotationSettings.separator,
-            editMode: this.viewModel.settings.annotationSettings.editMode,
+            // editMode: this.viewModel.settings.annotationSettings.editMode,
             annotationStyle: this.viewModel.settings.annotationSettings.annotationStyle
           },
           selector: null
@@ -521,17 +536,31 @@ export class Visual implements IVisual {
       graphElement["selectionId"] = element.selectionId
       graphElement["AnnotationSize"] = element.fontSize;
       graphElement["AnnotationFont"] = element.FontFamily;
-      graphElement["dx"] = element.dx;
-      graphElement["dy"] = element.dy;
-      graphElement["x"] = element.x;
-      graphElement["y"] = element.y;
+
+      graphElement["dy"] = false
+      graphElement["x"] = false
+      graphElement["dx"] = false
+      graphElement["textWidth"] = this.getTextWidth(`${graphElement["Category"] + this.viewModel.settings.annotationSettings.separator + " " + graphElement["Value"]}`, element.fontSize, element.FontFamily)
+
+      if (!this.viewModel.settings.annotationSettings.stagger) {
+        graphElement["y"] = element.top ? marginTop : marginTop + this.viewModel.settings.barSettings.barHeight;
+
+      }
+      else {
+        graphElement["y"] = element.top ? marginTopStagger : marginTopStagger + this.viewModel.settings.barSettings.barHeight;
+      }
+
+
+
       graphElements.push(graphElement)
+
 
       if (element.top) {
         marginTop = 50
         marginTopStagger += 30
       }
     });
+
 
 
     //handles auto and manual scale
@@ -552,8 +581,8 @@ export class Visual implements IVisual {
 
     // this.renderVisual(options.viewport.width, options.viewport.height, graphElements.sort((x, y) => { return y.Value - x.Value }))
 
-    let width = options.viewport.width,
-      height = options.viewport.height;
+    this.width = options.viewport.width;
+    this.height = options.viewport.height;
     graphElements = graphElements.sort((x, y) => { return y.Value - x.Value })
 
 
@@ -567,11 +596,11 @@ export class Visual implements IVisual {
 
     let scale = d3.scaleLinear()
       .domain([this.minScale !== false ? this.minScale : d3.min(graphElements, function (d) { return d.Value }), this.maxScale !== false ? this.maxScale : d3.max(graphElements, function (d) { return d.Value; })]) //min and max data from input
-      .range([0, width - (this.padding * 2)]); //min and max width in px           
+      .range([0, this.width - (this.padding * 2)]); //min and max width in px           
 
     // set height and width of root SVG element using viewport passed by Power BI host
-    this.svg.attr("height", height)
-      .attr("width", width)
+    this.svg.attr("height", this.height)
+      .attr("width", this.width)
       .attr("stroke", 'gray');
 
 
@@ -601,7 +630,7 @@ export class Visual implements IVisual {
     if (this.viewModel.settings.axisSettings.axis === "Percentage") {
       x_axis = d3.axisBottom(d3.scaleLinear()
         .domain([0, 100]) //percentage axis
-        .range([0, width - (this.padding * 2)]))
+        .range([0, this.width - (this.padding * 2)]))
         .tickFormat(d => d + "%")
     } else {
       x_axis = d3.axisBottom(scale)
@@ -649,63 +678,68 @@ export class Visual implements IVisual {
       })
 
 
+
+
     // handle annotations positioning
     graphElements.forEach(element => {
       // element.x = this.padding + scale(element.Value);
+      element.x = this.padding + scale(element.Value);
+      element.dx = this.getAnnotationOrientation(element.textWidth, element.x);
 
       if (!this.viewModel.settings.annotationSettings.stagger) {
         // element.y = element.Top ? marginTop : marginTop + this.viewModel.settings.barSettings.barHeight;
-        this.viewModel.settings.annotationSettings.spacing = false;
+        // this.viewModel.settings.annotationSettings.spacing = false;
 
-        if (this.viewModel.settings.annotationSettings.editMode) {
-          element.x = element.x ? element.x : this.padding + scale(element.Value);
-          element.y = element.y ? element.y : element.y = element.Top ? marginTop : marginTop + this.viewModel.settings.barSettings.barHeight;
+        // if (this.viewModel.settings.annotationSettings.editMode) {
+        //   element.x = element.x ? element.x : this.padding + scale(element.Value);
+        //   element.y = element.y ? element.y : element.y = element.Top ? marginTop : marginTop + this.viewModel.settings.barSettings.barHeight;
 
-          element.dy = element.dy ? element.dy : element.Top ? -20 : this.viewModel.settings.axisSettings.axis === "None" ? 20 : 40;
-          element.dx = element.dx ? element.dx : element.Value == d3.max(graphElements, function (d) { return d.Value; }) ? -0.1 : 0;
-        }
+        // element.dy = element.dy ? element.dy : element.Top ? -20 : this.viewModel.settings.axisSettings.axis === "None" ? 20 : 40;
+        // element.dx = element.dx ? element.dx : element.Value == d3.max(graphElements, function (d) { return d.Value; }) ? -0.1 : 0;
+        // }
 
-        else {
-          element.dx = false;
-          element.dy = false;
+        // else {
+        // element.dx = false;
+        // element.dy = false;
 
-          element.x = false;
-          element.y = false;
-          this.persistCoord(element) //resets coord to false so previous are deleted. Also being delayed but work fine because of if statements
-          element.dy = element.Top ? -20 : this.viewModel.settings.axisSettings.axis === "None" ? 20 : 40;
-          element.dx = element.Value == d3.max(graphElements, function (d) { return d.Value; }) ? -0.1 : 0;
+        // element.x = false;
+        // element.y = false;
+        // this.persistCoord(element) //resets coord to false so previous are deleted. Also being delayed but work fine because of if statements
+        element.dy = element.Top ? -20 : this.viewModel.settings.axisSettings.axis === "None" ? 20 : 40;
+        // element.dx = element.Value == d3.max(graphElements, function (d) { return d.Value; }) ? -0.1 : 0;
 
-          element.x = this.padding + scale(element.Value);
-          element.y = element.Top ? marginTop : marginTop + this.viewModel.settings.barSettings.barHeight;
-        }
+        // element.x = this.padding + scale(element.Value);
+        // element.y = element.Top ? marginTop : marginTop + this.viewModel.settings.barSettings.barHeight;
+        // }
       }
 
       else {
         // element.y = element.Top ? marginTopStagger : marginTopStagger + this.viewModel.settings.barSettings.barHeight;
 
 
-        if (this.viewModel.settings.annotationSettings.editMode) {
-          element.x = element.x ? element.x : this.padding + scale(element.Value);
-          element.y = element.y ? element.y : element.Top ? marginTopStagger : marginTopStagger + this.viewModel.settings.barSettings.barHeight;
+        // if (this.viewModel.settings.annotationSettings.editMode) {
+        //   element.x = element.x ? element.x : this.padding + scale(element.Value);
+        //   element.y = element.y ? element.y : element.Top ? marginTopStagger : marginTopStagger + this.viewModel.settings.barSettings.barHeight;
 
-          element.dy = element.dy ? element.dy : element.Top ? this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) : this.viewModel.settings.axisSettings.axis === "None" ? this.viewModel.settings.annotationSettings.spacing * countBottom : this.viewModel.settings.annotationSettings.spacing * countBottom + 20;
-          element.dx = element.dx ? element.dx : element.Value == d3.max(graphElements, function (d) { return d.Value; }) ? -0.1 : 0;
-        }
+        //   element.dy = element.dy ? element.dy : element.Top ? this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) : this.viewModel.settings.axisSettings.axis === "None" ? this.viewModel.settings.annotationSettings.spacing * countBottom : this.viewModel.settings.annotationSettings.spacing * countBottom + 20;
+        //   element.dx = element.dx ? element.dx : element.Value == d3.max(graphElements, function (d) { return d.Value; }) ? -0.1 : 0;
+        // }
 
-        else {
-          element.x = false;
-          element.y = false;
-          element.dx = false;
-          element.dy = false;
-          this.persistCoord(element)
+        // else {
+        // element.x = false;
+        // element.y = false;
+        // element.dx = false;
+        // element.dy = false;
+        // this.persistCoord(element)
 
-          element.x = this.padding + scale(element.Value);
-          element.y = element.Top ? marginTopStagger : marginTopStagger + this.viewModel.settings.barSettings.barHeight;
+        // element.x = this.padding + scale(element.Value);
+        // element.y = element.Top ? marginTopStagger : marginTopStagger + this.viewModel.settings.barSettings.barHeight;
 
-          element.dy = element.Top ? this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) : this.viewModel.settings.axisSettings.axis === "None" ? this.viewModel.settings.annotationSettings.spacing * countBottom : this.viewModel.settings.annotationSettings.spacing * countBottom + 20;
-          element.dx = element.Value == d3.max(graphElements, function (d) { return d.Value; }) ? -0.1 : 0;
-        }
+        element.dy = element.Top ? this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) : this.viewModel.settings.axisSettings.axis === "None" ? this.viewModel.settings.annotationSettings.spacing * countBottom : this.viewModel.settings.annotationSettings.spacing * countBottom + 20;
+        // element.dx = element.Value == d3.max(graphElements, function (d) { return d.Value; }) ? -0.1 : 0;
       }
+      // }      
+
 
       annotationsData = [{
         note: {
@@ -726,13 +760,13 @@ export class Visual implements IVisual {
         .type(type)
 
 
-      if (this.viewModel.settings.annotationSettings.editMode) {
-        makeAnnotations.editMode(true)
-          .on('dragend', (el) => {
-            this.persistCoord(el)
-          })
+      // if (this.viewModel.settings.annotationSettings.editMode) {
+      //   makeAnnotations.editMode(true)
+      //     .on('dragend', (el) => {
+      //       this.persistCoord(el)
+      //     })
 
-      }
+      // }
 
 
       //print annotations
@@ -761,36 +795,69 @@ export class Visual implements IVisual {
 
   }
 
-  private persistCoord(el) {
+  // private persistCoord(el) {
 
-    const id = el.selectionId ? el.selectionId : el.id; //if SVG element, use selectionId, if annotation, use ID.
-    console.log("dx", el.dx, "dy", el.dy)
-    const propertiesToBePersisted: VisualObjectInstance = {
-      objectName: "manualPosition",
-      properties: {
-        dx: el.dx,
-        dy: el.dy,
-        x: el.x,
-        y: el.y
-      },
-      selector: id.getSelector() //selector is necessary for finding correct dataPoint
-    };
+  //   const id = el.selectionId ? el.selectionId : el.id; //if SVG element, use selectionId, if annotation, use ID.
+  //   console.log("dx", el.dx, "dy", el.dy)
+  //   const propertiesToBePersisted: VisualObjectInstance = {
+  //     objectName: "manualPosition",
+  //     properties: {
+  //       dx: el.dx,
+  //       dy: el.dy,
+  //       x: el.x,
+  //       y: el.y
+  //     },
+  //     selector: id.getSelector() //selector is necessary for finding correct dataPoint
+  //   };
 
-    //test below works fine and no delay.
-    // const propertiesToBePersistedTest: VisualObjectInstance = {
-    //   objectName: "axisSettings",
-    //   properties: {
-    //     axis: "Percentage"
-    //   },
-    //   selector: null //global setting no selector
-    // };
+  //test below works fine and no delay.
+  // const propertiesToBePersistedTest: VisualObjectInstance = {
+  //   objectName: "axisSettings",
+  //   properties: {
+  //     axis: "Percentage"
+  //   },
+  //   selector: null //global setting no selector
+  // };
 
 
-    this.host.persistProperties({
-      merge: [
-        propertiesToBePersisted
-      ]
-    });
+  //   this.host.persistProperties({
+  //     merge: [
+  //       propertiesToBePersisted
+  //     ]
+  //   });
+  // }
+
+  private getTextWidth(textString: string, fontSize: number, fontFamily: string) {
+    let textData = [textString]
+
+    let textWidth
+
+    //Measure text's width for correct positioning of annotation
+    this.svg.append('g')
+      .selectAll('.dummyText')
+      .data(textData)
+      .enter()
+      .append("text")
+      .attr("font-family", fontFamily)
+      .attr("font-size", fontSize)
+      .text(function (d) { return d })
+      .each(function (d, i) {
+        let thisWidth = this.getComputedTextLength()
+        textWidth = thisWidth
+        this.remove() // remove them just after displaying them
+      })
+
+    // console.log(textWidth)
+    return textWidth
+  }
+
+  private getAnnotationOrientation(textWidth, xPosition) {
+    if (textWidth + xPosition > this.width - this.padding * 2) {
+      return -0.1
+    } else {
+
+      return 0
+    }
   }
 
   private appendAnnotaions(makeAnnotations: svgAnnotations.default<unknown>, fontFamily: string, fontSize: number) {

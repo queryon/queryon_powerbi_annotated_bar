@@ -238,12 +238,6 @@
                     "type": {
                         "numeric": true
                     }
-                },
-                "editMode": {
-                    "displayName": "Draggable labels",
-                    "type": {
-                        "bool": true
-                    }
                 }
             }
         },
