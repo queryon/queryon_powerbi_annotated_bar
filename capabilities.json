@@ -36,6 +36,12 @@
         "textFormatting": {
             "displayName": "Text Settings",
             "properties": {
+                "globalFormatting": {
+                    "displayName": "Global formatting",
+                    "type": {
+                        "bool": true
+                    }
+                },
                 "fill": {
                     "displayName": "Color",
                     "type": {

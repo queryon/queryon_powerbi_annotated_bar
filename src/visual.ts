@@ -55,6 +55,12 @@ interface AnnotatedBarSettings {
     manualScale: boolean,
     barMin: any,
     barMax: any
+  },
+  textFormatting: {
+    globalFormatting: boolean,
+    fill: any,
+    FontFamily: string,
+    fontSize: number
   }
 }
 
@@ -104,6 +110,12 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       manualScale: false,
       barMin: false,
       barMax: false
+    },
+    textFormatting: {
+      globalFormatting: true,
+      fontSize: 12,
+      FontFamily: 'Arial',
+      fill: { solid: { color: 'gray' } }
     }
   };
 
@@ -167,7 +179,6 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
     }
 
   } else {
-    // console.log(dataViews[0].metadata.objects)
     for (let i = 0, len = Math.max(categorical.categories[0].values.length, categorical.values[0].values.length); i < len; i++) {
 
       let defaultBarColor: Fill = {
@@ -204,7 +215,6 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
 
 
     }
-    console.log(annotatedBarDataPoints)
   }
 
   let annotatedBarSettings: AnnotatedBarSettings = {
@@ -217,7 +227,6 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       annotationStyle: getValue<string>(objects, 'annotationSettings', 'annotationStyle', defaultSettings.annotationSettings.annotationStyle),
     },
     axisSettings: {
-
       axis: getValue<any>(objects, 'axisSettings', 'axis', defaultSettings.axisSettings.axis),
       axisColor: getValue<string>(objects, 'axisSettings', 'axisColor', defaultSettings.axisSettings.axisColor),
       fontSize: getValue<number>(objects, 'axisSettings', 'fontSize', defaultSettings.axisSettings.fontSize),
@@ -229,6 +238,13 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       manualScale: getValue<any>(objects, 'barSettings', 'manualScale', defaultSettings.barSettings.manualScale),
       barMin: getValue<any>(objects, 'barSettings', 'barMin', defaultSettings.barSettings.barMin),
       barMax: getValue<any>(objects, 'barSettings', 'barMax', defaultSettings.barSettings.barMax),
+    },
+    textFormatting: {
+      globalFormatting: getValue<boolean>(objects, 'textFormatting', 'globalFormatting', defaultSettings.textFormatting.globalFormatting),
+      fontSize: getValue<number>(objects, 'textFormatting', 'fontSize', defaultSettings.textFormatting.fontSize),
+      FontFamily: getValue<string>(objects, 'textFormatting', 'FontFamily', defaultSettings.textFormatting.FontFamily),
+      fill: getValue<any>(objects, 'textFormatting', 'fill', defaultSettings.textFormatting.fill).solid.color
+
     }
   }
 
@@ -287,7 +303,6 @@ export function getCategoricalObjectValue<T>(category: any, index: number, objec
       let object
       if (category.categories) {
         object = categoryObject[objectName]
-        console.log(categoryObject)
       } else {
         if (categoryObject.source.objects) {
           object = categoryObject.source.objects[objectName];
@@ -372,42 +387,88 @@ export class Visual implements IVisual {
 
         break
       case 'textFormatting':
-        for (let barDataPoint of this.viewModel.dataPoints) {
+
+        objectEnumeration.push({
+          objectName: objectName,
+          properties: {
+            globalFormatting: this.viewModel.settings.textFormatting.globalFormatting,
+          },
+          selector: null
+        })
+
+
+
+        if (this.viewModel.settings.textFormatting.globalFormatting) {
           if (!this.viewModel.settings.annotationSettings.sameAsBarColor) {
             objectEnumeration.push({
               objectName: objectName,
-              displayName: barDataPoint.displayName + " Color",
               properties: {
                 fill: {
                   solid: {
-                    color: barDataPoint.LabelColor
+                    color: this.viewModel.settings.textFormatting.fill
                   }
                 }
               },
-              selector: barDataPoint.selectionId.getSelector()
-            });
+              selector: null
+            })
           }
-
-          //Same Naming:  
-          objectEnumeration.push({
-            objectName: barDataPoint.displayName,
-            displayName: barDataPoint.displayName,
-            properties: {
-              FontFamily: barDataPoint.FontFamily,
-              fontSize: barDataPoint.fontSize
-            },
-            selector: barDataPoint.selectionId.getSelector()
-          });
-
-          //diferent naming:
           objectEnumeration.push({
             objectName: objectName,
-            displayName: barDataPoint.displayName + "'s text on top",
+            properties: {
+
+              FontFamily: this.viewModel.settings.textFormatting.FontFamily,
+              fontSize: this.viewModel.settings.textFormatting.fontSize
+            },
+            selector: null
+          })
+
+        }
+
+        for (let barDataPoint of this.viewModel.dataPoints) {
+          objectEnumeration.push({
+            objectName: objectName,
+            displayName: barDataPoint.displayName + " text on top",
             properties: {
               top: barDataPoint.top
             },
             selector: barDataPoint.selectionId.getSelector()
           });
+
+          if (!this.viewModel.settings.annotationSettings.sameAsBarColor) {
+
+            if (!this.viewModel.settings.textFormatting.globalFormatting) {
+
+              objectEnumeration.push({
+                objectName: objectName,
+                displayName: barDataPoint.displayName + " Color",
+                properties: {
+                  fill: {
+                    solid: {
+                      color: barDataPoint.LabelColor
+                    }
+                  }
+                },
+                selector: barDataPoint.selectionId.getSelector()
+              });
+            }
+          }
+
+
+          if (!this.viewModel.settings.textFormatting.globalFormatting) {
+            //Same Naming:  
+            objectEnumeration.push({
+              objectName: barDataPoint.displayName,
+              displayName: barDataPoint.displayName,
+              properties: {
+                FontFamily: barDataPoint.FontFamily,
+                fontSize: barDataPoint.fontSize
+              },
+              selector: barDataPoint.selectionId.getSelector()
+            });
+          }
+
+
+
         }
         break;
 
@@ -522,29 +583,23 @@ export class Visual implements IVisual {
     });
 
     this.viewModel.dataPoints.forEach((element, i) => {
-      // console.log(element.dx, element.dy)
-      // After coordinates are persisted element.dx and element.dy are still delayed - element comes from getCategoricalObjectValue function.
       let value = element.value
       let displayName = element.displayName
+      let annotationColor = this.viewModel.settings.textFormatting.globalFormatting ? this.viewModel.settings.textFormatting.fill : element.LabelColor
+      let annotationSize = this.viewModel.settings.textFormatting.globalFormatting ? this.viewModel.settings.textFormatting.fontSize : element.fontSize
+      let annotationFont = this.viewModel.settings.textFormatting.globalFormatting ? this.viewModel.settings.textFormatting.FontFamily : element.FontFamily
+
       let graphElement = {}
       graphElement["Category"] = displayName;
       graphElement["Value"] = value;
       graphElement["Color"] = element.ShowInBar ? element.barColor : "transparent"
-      graphElement["AnnotationColor"] = this.viewModel.settings.annotationSettings.sameAsBarColor && element.ShowInBar ? element.barColor : element.LabelColor;
+      graphElement["AnnotationColor"] = this.viewModel.settings.annotationSettings.sameAsBarColor && element.ShowInBar ? element.barColor : annotationColor;
       graphElement["Top"] = element.top;
       graphElement["Display"] = valueFormatter.format(value)
       graphElement["selectionId"] = element.selectionId
-      graphElement["AnnotationSize"] = element.fontSize;
-      graphElement["AnnotationFont"] = element.FontFamily;
-
-      // graphElement["dy"] = false
-      // graphElement["x"] = false
-      // graphElement["y"] = false
-      // graphElement["dx"] = false
-      graphElement["textWidth"] = this.getTextWidth(`${graphElement["Category"] + this.viewModel.settings.annotationSettings.separator + " " + graphElement["Value"]}`, element.fontSize, element.FontFamily)
-
-
-
+      graphElement["AnnotationSize"] = annotationSize;
+      graphElement["AnnotationFont"] = annotationFont;
+      graphElement["textWidth"] = this.getTextWidth(`${graphElement["Category"] + this.viewModel.settings.annotationSettings.separator + " " + graphElement["Value"]}`, annotationSize, annotationFont)
 
 
       graphElements.push(graphElement)
@@ -552,7 +607,8 @@ export class Visual implements IVisual {
 
       if (element.top) {
         marginTop = 50
-        marginTopStagger += 30
+        marginTopStagger += 10
+        marginTopStagger += this.viewModel.settings.annotationSettings.spacing
       }
     });
 
@@ -842,7 +898,6 @@ export class Visual implements IVisual {
         this.remove() // remove them just after displaying them
       })
 
-    // console.log(textWidth)
     return textWidth
   }
 
