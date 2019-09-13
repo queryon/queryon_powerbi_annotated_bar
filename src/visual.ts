@@ -125,6 +125,13 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
 
   let categorical = dataViews[0].categorical;
   let dataValues = categorical.values;
+  let category, dataValue
+
+  if (categorical.categories) {
+    category = categorical.categories[0];
+    dataValue = categorical.values[0];
+
+  }
 
   let annotatedBarDataPoints: AnnotatedBarDataPoint[] = [];
 
@@ -191,10 +198,13 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
         // dy: false, x: false, y: false, top: false,
 
         selectionId: host.createSelectionIdBuilder()     //generates IDs for svg elements based on queryName
-          .withSeries(categorical.values, categorical.values[i])
+          .withCategory(category, i)
           .createSelectionId()
       });
+
+
     }
+    console.log(annotatedBarDataPoints)
   }
 
   let annotatedBarSettings: AnnotatedBarSettings = {
@@ -268,23 +278,16 @@ export function getCategoricalObjectValue<T>(category: any, index: number, objec
     categoryObjects = category.values;
   }
   else {
-    // console.log(category)
-    categoryObjects = category.categories[0]
+    categoryObjects = category.categories[0].objects
   }
   if (categoryObjects) {
     let categoryObject
-    if (category.categories) {
-      // console.log(categoryObjects)
-      categoryObject = categoryObjects[0];
-    } else {
-      categoryObject = categoryObjects[index];
-    }
-
+    categoryObject = categoryObjects[index];
     if (categoryObject) {
       let object
       if (category.categories) {
-        object = categoryObject.object
-        // console.log(categoryObject)
+        object = categoryObject[objectName]
+        console.log(categoryObject)
       } else {
         if (categoryObject.source.objects) {
           object = categoryObject.source.objects[objectName];
@@ -292,7 +295,6 @@ export function getCategoricalObjectValue<T>(category: any, index: number, objec
         }
       }
       if (object) {
-        // console.log("obj", object)
         let property = object[propertyName];
 
         if (property !== undefined) {
@@ -308,8 +310,6 @@ export function getCategoricalObjectValue<T>(category: any, index: number, objec
 
 
 export class Visual implements IVisual {
-
-
   private svg: d3.Selection<SVGElement, {}, HTMLElement, any>;
   private svgGroupMain: any;
   private padding: number;
