@@ -284,6 +284,7 @@ export interface graphElements {
   dy: any;
   selectionId: ISelectionId;
   textWidth: number;
+  showInBar: boolean;
 }
 
 //getCategoricalObjectValue takes in categorical: all datapoints objects, dataPoint's index, object name: properties' categories, property name and default value. 
@@ -342,7 +343,7 @@ export class Visual implements IVisual {
 
     this.svg = d3.select(options.element).append('svg');
     this.svgGroupMain = this.svg.append('g');
-    this.padding = 10;
+    this.padding = 15;
     this.host = options.host
     this.selectionIdBuilder = this.host.createSelectionIdBuilder();
     this.selectionManager = this.host.createSelectionManager();
@@ -592,7 +593,9 @@ export class Visual implements IVisual {
       let graphElement = {}
       graphElement["Category"] = displayName;
       graphElement["Value"] = value;
-      graphElement["Color"] = element.ShowInBar ? element.barColor : "transparent"
+      graphElement["Color"] = element.barColor
+
+      graphElement["ShowInBar"] = element.ShowInBar
       graphElement["AnnotationColor"] = this.viewModel.settings.annotationSettings.sameAsBarColor && element.ShowInBar ? element.barColor : annotationColor;
       graphElement["Top"] = element.top;
       graphElement["Display"] = valueFormatter.format(value)
@@ -657,7 +660,7 @@ export class Visual implements IVisual {
 
     //bar settings
     let bar = this.svgGroupMain.selectAll('rect')
-      .data(graphElements)
+      .data(graphElements.filter(element => element.ShowInBar === true))
 
     bar.enter()
       .append('rect')
@@ -685,6 +688,7 @@ export class Visual implements IVisual {
         .tickFormat(d => d + "%")
     } else {
       x_axis = d3.axisBottom(scale)
+        .tickFormat(d => valueFormatter.format(d))
     }
 
     //Append group and insert axis

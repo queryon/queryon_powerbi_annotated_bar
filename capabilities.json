@@ -215,9 +215,6 @@
                             {
                                 "displayName": "Annotation Callout",
                                 "value": "annotationCallout"
-                            }, {
-                                "displayName": "Annotation Callout Elbow",
-                                "value": "annotationCalloutElbow"
                             },
                             {
                                 "displayName": "Annotation Callout Curve",
