@@ -537,18 +537,13 @@ export class Visual implements IVisual {
       graphElement["AnnotationSize"] = element.fontSize;
       graphElement["AnnotationFont"] = element.FontFamily;
 
-      graphElement["dy"] = false
-      graphElement["x"] = false
-      graphElement["dx"] = false
+      // graphElement["dy"] = false
+      // graphElement["x"] = false
+      // graphElement["y"] = false
+      // graphElement["dx"] = false
       graphElement["textWidth"] = this.getTextWidth(`${graphElement["Category"] + this.viewModel.settings.annotationSettings.separator + " " + graphElement["Value"]}`, element.fontSize, element.FontFamily)
 
-      if (!this.viewModel.settings.annotationSettings.stagger) {
-        graphElement["y"] = element.top ? marginTop : marginTop + this.viewModel.settings.barSettings.barHeight;
 
-      }
-      else {
-        graphElement["y"] = element.top ? marginTopStagger : marginTopStagger + this.viewModel.settings.barSettings.barHeight;
-      }
 
 
 
@@ -709,7 +704,7 @@ export class Visual implements IVisual {
         // element.dx = element.Value == d3.max(graphElements, function (d) { return d.Value; }) ? -0.1 : 0;
 
         // element.x = this.padding + scale(element.Value);
-        // element.y = element.Top ? marginTop : marginTop + this.viewModel.settings.barSettings.barHeight;
+        element.y = element.Top ? marginTop : marginTop + this.viewModel.settings.barSettings.barHeight;
         // }
       }
 
@@ -733,7 +728,7 @@ export class Visual implements IVisual {
         // this.persistCoord(element)
 
         // element.x = this.padding + scale(element.Value);
-        // element.y = element.Top ? marginTopStagger : marginTopStagger + this.viewModel.settings.barSettings.barHeight;
+        element.y = element.Top ? marginTopStagger : marginTopStagger + this.viewModel.settings.barSettings.barHeight;
 
         element.dy = element.Top ? this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) : this.viewModel.settings.axisSettings.axis === "None" ? this.viewModel.settings.annotationSettings.spacing * countBottom : this.viewModel.settings.annotationSettings.spacing * countBottom + 20;
         // element.dx = element.Value == d3.max(graphElements, function (d) { return d.Value; }) ? -0.1 : 0;
