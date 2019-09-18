@@ -12,7 +12,7 @@
     ],
     "objects": {
         "barColorSelector": {
-            "displayName": "Bar Colors",
+            "displayName": "Bar formatting",
             "properties": {
                 "ShowInBar": {
                     "displayName": "Show in Bar",
@@ -34,10 +34,15 @@
             }
         },
         "textFormatting": {
-            "displayName": "Text Settings",
+            "displayName": "Label formatting",
             "properties": {
-                "globalFormatting": {
-                    "displayName": "Global formatting",
+                "allTextTop": {
+                    "displayName": "All labels on top",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "customFormat": {
                     "type": {
                         "bool": true
                     }
@@ -56,6 +61,27 @@
                     "displayName": "Text on top",
                     "type": {
                         "bool": true
+                    }
+                },
+                "labelOrientation": {
+                    "displayName": "Label orientation",
+                    "type": {
+                        "enumeration": [{
+                                "displayName": "Auto",
+                                "value": "Auto"
+                            },
+                            {
+                                "displayName": "Align Left",
+                                "value": "left"
+                            }, {
+                                "displayName": "Align Right",
+                                "value": "right"
+                            },
+                            {
+                                "displayName": "Align Center",
+                                "value": "middle"
+                            }
+                        ]
                     }
                 },
                 "fontSize": {
@@ -171,38 +197,36 @@
                 }
             }
         },
-        "manualPosition": {
-            "displayName": "Manual Position",
-            "properties": {
-                "dx": {
-                    "type": {
-                        "numeric": true
-                    }
-                },
-                "dy": {
-                    "type": {
-                        "numeric": true
-                    }
-                },
-                "x": {
-                    "type": {
-                        "numeric": true
-                    }
-                },
-                "y": {
-                    "type": {
-                        "numeric": true
-                    }
-                }
-            }
-        },
         "annotationSettings": {
-            "displayName": "Annotation Settings",
+            "displayName": "Style",
             "properties": {
+                "barHeight": {
+                    "displayName": "Bar Height",
+                    "type": {
+                        "numeric": true
+                    }
+                },
                 "sameAsBarColor": {
                     "displayName": "Text color same as bar color",
                     "type": {
                         "bool": true
+                    }
+                },
+                "displayUnits": {
+                    "displayName": "Display Units",
+                    "displayNameKey": "Visual_DisplayUnits",
+                    "type": {
+                        "formatting": {
+                            "labelDisplayUnits": true
+                        }
+                    }
+                },
+                "precision": {
+                    "displayName": "Decimal Places",
+                    "displayNameKey": "Visual_DecimalPlaces",
+                    "placeHolderText": "Auto",
+                    "type": {
+                        "numeric": true
                     }
                 },
                 "annotationStyle": {
@@ -245,8 +269,27 @@
             }
         },
         "axisSettings": {
-            "displayName": "Axis Settings",
+            "displayName": "X Axis",
             "properties": {
+                "manualScale": {
+                    "displayName": "Manual Scale",
+                    "description": "Manual Scale",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "barMin": {
+                    "displayName": "Manual Scale start",
+                    "type": {
+                        "numeric": true
+                    }
+                },
+                "barMax": {
+                    "displayName": "Manual Scale end",
+                    "type": {
+                        "numeric": true
+                    }
+                },
                 "fontSize": {
                     "displayName": "Axis Font Size",
                     "type": {
@@ -270,9 +313,6 @@
                             }, {
                                 "displayName": "Data",
                                 "value": "Values"
-                            }, {
-                                "displayName": "Percentage",
-                                "value": "Percentage"
                             }
 
                         ]
@@ -393,37 +433,6 @@
                     }
                 }
             }
-        },
-        "barSettings": {
-            "displayName": "Bar Settings",
-            "properties": {
-                "barHeight": {
-                    "displayName": "Bar Height",
-                    "type": {
-                        "numeric": true
-                    }
-                },
-                "manualScale": {
-                    "displayName": "Manual Scale",
-                    "description": "Manual Scale",
-                    "type": {
-                        "bool": true
-                    }
-                },
-                "barMin": {
-                    "displayName": "Manual Scale start",
-                    "type": {
-                        "numeric": true
-                    }
-                },
-                "barMax": {
-                    "displayName": "Manual Scale end",
-                    "type": {
-                        "numeric": true
-                    }
-                }
-            }
-
         }
     },
     "dataViewMappings": [{
