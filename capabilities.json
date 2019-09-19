@@ -200,6 +200,24 @@
         "annotationSettings": {
             "displayName": "Style",
             "properties": {
+                "overlapStyle": {
+                    "displayName": "Overlap Style",
+                    "type": {
+                        "enumeration": [{
+                                "displayName": "Full Overlap",
+                                "value": "full"
+                            },
+                            {
+                                "displayName": "Inside Staggered",
+                                "value": "inside"
+                            },
+                            {
+                                "displayName": "Edge to Edge",
+                                "value": "edge"
+                            }
+                        ]
+                    }
+                },
                 "barHeight": {
                     "displayName": "Bar Height",
                     "type": {

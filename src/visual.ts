@@ -31,7 +31,7 @@ import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration
 
 // import { VisualSettings, dataPointSettings, AxisSettings, BarSettings } from "./settings";
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
-import { text } from "d3";
+import { text, thresholdSturges } from "d3";
 
 //Global settings to the visual
 interface AnnotatedBarSettings {
@@ -44,7 +44,8 @@ interface AnnotatedBarSettings {
     sameAsBarColor: boolean,
     barHeight: number,
     displayUnits: number,
-    precision: any
+    precision: any,
+    overlapStyle: string
   },
   axisSettings: {
     bold: boolean,
@@ -113,6 +114,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       barHeight: 30,
       displayUnits: 0,
       precision: false,
+      overlapStyle: 'full',
       // editMode: false,
       separator: ":"
     },
@@ -170,8 +172,8 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       spacing: getValue<any>(objects, 'annotationSettings', 'spacing', defaultSettings.annotationSettings.spacing),
       annotationStyle: getValue<string>(objects, 'annotationSettings', 'annotationStyle', defaultSettings.annotationSettings.annotationStyle),
       displayUnits: getValue<number>(objects, 'annotationSettings', 'displayUnits', defaultSettings.annotationSettings.displayUnits),
-      precision: getValue<any>(objects, 'annotationSettings', 'precision', defaultSettings.annotationSettings.precision)
-
+      precision: getValue<any>(objects, 'annotationSettings', 'precision', defaultSettings.annotationSettings.precision),
+      overlapStyle: getValue<string>(objects, 'annotationSettings', 'overlapStyle', defaultSettings.annotationSettings.overlapStyle)
     },
     axisSettings: {
       axis: getValue<any>(objects, 'axisSettings', 'axis', defaultSettings.axisSettings.axis),
@@ -407,6 +409,8 @@ export class Visual implements IVisual {
         objectEnumeration.push({
           objectName: objectName,
           properties: {
+            overlapStyle: this.viewModel.settings.annotationSettings.overlapStyle,
+            barHeight: this.viewModel.settings.annotationSettings.barHeight,
             sameAsBarColor: this.viewModel.settings.annotationSettings.sameAsBarColor,
             displayUnits: this.viewModel.settings.annotationSettings.displayUnits,
             precision: this.viewModel.settings.annotationSettings.precision,
@@ -733,6 +737,7 @@ export class Visual implements IVisual {
     //sets an empty canva
     this.svgGroupMain.selectAll("g").remove();
 
+    this.svgGroupMain.selectAll("rect").remove();
     let scale = d3.scaleLinear()
       .domain([this.minScale !== false ? this.minScale : d3.min(graphElements, function (d) { return d.Value }), this.maxScale !== false ? this.maxScale : d3.max(graphElements, function (d) { return d.Value; })]) //min and max data from input
       .range([0, this.width - (this.padding * 2)]); //min and max width in px           
@@ -743,27 +748,83 @@ export class Visual implements IVisual {
       .attr("stroke", 'gray');
 
 
+
     //bar settings
-    let bar = this.svgGroupMain.selectAll('rect')
-      .data(graphElements.filter(element => element.ShowInBar === true))
+    let barY, thisBarHeight,
+      barElements = graphElements.filter(element => element.ShowInBar === true),
+      firstBarY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop
+    if (this.viewModel.settings.annotationSettings.overlapStyle === "full") {
+      barY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop
+      thisBarHeight = this.viewModel.settings.annotationSettings.barHeight
+    }
+    else if (this.viewModel.settings.annotationSettings.overlapStyle === "edge") {
+      barElements = barElements.reverse()
+      thisBarHeight = this.viewModel.settings.annotationSettings.barHeight / graphElements.length
+      barY = function (d, i) {
+        return firstBarY + thisBarHeight * i
+      }
+    }
+    if (this.viewModel.settings.annotationSettings.overlapStyle !== "inside") {
 
-    bar.enter()
-      .append('rect')
-      .merge(bar)
-      .attr('width', function (d) {
-        return scale(d.Value);
+      let bar = this.svgGroupMain.selectAll('rect')
+        .data(barElements)
+
+      bar.enter()
+        .append('rect')
+        .merge(bar)
+        .attr('width', function (d) {
+          return scale(d.Value);
+        })
+
+        .attr('x', this.padding)
+        .attr('fill', function (d, i) {
+
+          return d.Color
+        })
+        .attr('y', barY)
+        .attr('height', thisBarHeight)
+
+      bar.exit().remove()
+    } else {
+      let bars = {}
+      barElements.forEach((barElement, i) => {
+
+
+
+        // if (i === 0) {
+        // thisBarHeight = this.viewModel.settings.annotationSettings.barHeight
+        // } else {
+        thisBarHeight = this.viewModel.settings.annotationSettings.barHeight / (i + 1)
+        // }
+
+        let dynamicY = this.viewModel.settings.annotationSettings.barHeight - thisBarHeight
+
+        let finalY = (this.viewModel.settings.annotationSettings.barHeight - thisBarHeight) / 2
+        barY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger + finalY : marginTop + finalY
+        bars[i] = this.svgGroupMain.selectAll(`.bar${i}`)
+          .data([barElement])
+
+        bars[i].enter()
+          .append('rect')
+          .merge(bars[i])
+          .attr('class', `.bar${i}`)
+          .attr('width', function (d) {
+            return scale(d.Value);
+          })
+
+          .attr('x', this.padding)
+          .attr('fill', function (d, i) {
+
+            return d.Color
+          })
+          .attr('y', barY)
+          .attr('height', thisBarHeight)
+
+        bars[i].exit().remove()
+
       })
 
-      .attr('x', this.padding)
-      .attr('fill', function (d, i) {
-
-        return d.Color
-      })
-      .attr('y', this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop)
-      .attr('height', this.viewModel.settings.annotationSettings.barHeight)
-
-    bar.exit().remove()
-
+    }
     // let valueFormatterFactory = vf;
     // let valueFormatter = valueFormatterFactory.create({
     //   format: format,
