@@ -37,7 +37,7 @@
             "displayName": "Label formatting",
             "properties": {
                 "allTextTop": {
-                    "displayName": "All labels on top",
+                    "displayName": "Labels on top",
                     "type": {
                         "bool": true
                     }
@@ -64,7 +64,7 @@
                     }
                 },
                 "labelOrientation": {
-                    "displayName": "Label orientation",
+                    "displayName": "Labels orientation",
                     "type": {
                         "enumeration": [{
                                 "displayName": "Auto",

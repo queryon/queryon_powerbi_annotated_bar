@@ -59,6 +59,7 @@ interface AnnotatedBarSettings {
   },
   textFormatting: {
     allTextTop: boolean,
+    labelOrientation: string,
     fill: any,
     FontFamily: string,
     fontSize: number
@@ -130,6 +131,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
     },
     textFormatting: {
       allTextTop: false,
+      labelOrientation: "Auto",
       fontSize: 12,
       FontFamily: 'Arial',
       fill: { solid: { color: 'gray' } }
@@ -188,6 +190,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
     },
     textFormatting: {
       allTextTop: getValue<boolean>(objects, 'textFormatting', 'allTextTop', defaultSettings.textFormatting.allTextTop),
+      labelOrientation: getValue<string>(objects, 'textFormatting', 'labelOrientation', defaultSettings.textFormatting.labelOrientation),
       fontSize: getValue<number>(objects, 'textFormatting', 'fontSize', defaultSettings.textFormatting.fontSize),
       FontFamily: getValue<string>(objects, 'textFormatting', 'FontFamily', defaultSettings.textFormatting.FontFamily),
       fill: getValue<any>(objects, 'textFormatting', 'fill', defaultSettings.textFormatting.fill).solid.color
@@ -468,7 +471,7 @@ export class Visual implements IVisual {
         objectEnumeration.push({
           objectName: objectName,
           properties: {
-
+            labelOrientation: this.viewModel.settings.textFormatting.labelOrientation,
             FontFamily: this.viewModel.settings.textFormatting.FontFamily,
             fontSize: this.viewModel.settings.textFormatting.fontSize
           },
@@ -507,6 +510,17 @@ export class Visual implements IVisual {
                 selector: barDataPoint.selectionId.getSelector()
               });
             }
+
+
+            objectEnumeration.push({
+              objectName: objectName,
+              displayName: barDataPoint.displayName + " text on top",
+              properties: {
+                top: barDataPoint.top
+              },
+              selector: barDataPoint.selectionId.getSelector()
+            });
+
             // }
 
 
@@ -669,6 +683,7 @@ export class Visual implements IVisual {
       let annotationColor = !element.customFormat ? this.viewModel.settings.textFormatting.fill : element.LabelColor
       let annotationSize = !element.customFormat ? this.viewModel.settings.textFormatting.fontSize : element.fontSize
       let annotationFont = !element.customFormat ? this.viewModel.settings.textFormatting.FontFamily : element.FontFamily
+      let labelOrientation = !element.customFormat ? this.viewModel.settings.textFormatting.labelOrientation : element.labelOrientation
 
       let graphElement = {}
       graphElement["Category"] = displayName;
@@ -682,7 +697,7 @@ export class Visual implements IVisual {
       graphElement["AnnotationSize"] = annotationSize;
       graphElement["AnnotationFont"] = annotationFont;
       graphElement["textWidth"] = this.getTextWidth(`${graphElement["Category"] + this.viewModel.settings.annotationSettings.separator + " " + graphElement["Value"]}`, annotationSize, annotationFont)
-      graphElement["labelOrientation"] = element.labelOrientation
+      graphElement["labelOrientation"] = labelOrientation
       graphElement["customFormat"] = element.customFormat
       graphElement["dx"] = 0
       graphElements.push(graphElement)
@@ -695,6 +710,7 @@ export class Visual implements IVisual {
       }
     });
 
+    // marginTopStagger = marginTopStagger + (graphElements.filter(el => el.top).length * this.viewModel.settings.annotationSettings.spacing)
 
 
     //handles auto and manual scale
@@ -705,8 +721,11 @@ export class Visual implements IVisual {
       this.viewModel.settings.axisSettings.barMax = false;
 
     } else {
-      this.minScale = this.viewModel.settings.axisSettings.barMin === false ? d3.min(graphElements, function (d) { return d.Value }) : d3.min(graphElements, function (d) { return d.Value }) < this.viewModel.settings.axisSettings.barMin ? d3.min(graphElements, function (d) { return d.Value }) : this.viewModel.settings.axisSettings.barMin;
+      // this.minScale = this.viewModel.settings.axisSettings.barMin === false ? d3.min(graphElements, function (d) { return d.Value }) : d3.min(graphElements, function (d) { return d.Value }) < this.viewModel.settings.axisSettings.barMin ? d3.min(graphElements, function (d) { return d.Value }) : this.viewModel.settings.axisSettings.barMin;
       this.maxScale = this.viewModel.settings.axisSettings.barMax === false ? d3.max(graphElements, function (d) { return d.Value }) : this.viewModel.settings.axisSettings.barMax;
+
+      this.minScale = this.viewModel.settings.axisSettings.barMin === false ? d3.min(graphElements, function (d) { return d.Value }) : this.viewModel.settings.axisSettings.barMin;
+
     }
 
     let format: string = options.dataViews[0].categorical.values[0].source.format;
@@ -758,9 +777,38 @@ export class Visual implements IVisual {
       thisBarHeight = this.viewModel.settings.annotationSettings.barHeight
     }
     else if (this.viewModel.settings.annotationSettings.overlapStyle === "edge") {
+
       barElements = barElements.reverse()
-      thisBarHeight = this.viewModel.settings.annotationSettings.barHeight / graphElements.length
-      barY = function (d, i) {
+      thisBarHeight = this.viewModel.settings.annotationSettings.barHeight / barElements.length
+      // let countBottomBar = 0;
+      // let countTopBar = barElements.filter(el => el.Top).length;
+      let countBottomBar = 1;
+      let countTopBar = 1;
+
+      barY = (d, i) => {
+        barElements[i].y = firstBarY + thisBarHeight * i
+        let addToBar = this.viewModel.settings.annotationSettings.barHeight - (thisBarHeight * (i))
+
+        if (!this.viewModel.settings.annotationSettings.stagger) {
+          if (barElements[i].Top) {
+            // barElements[i].dy = 20 - (thisBarHeight * (i + 1))
+            barElements[i].dy = - (this.viewModel.settings.annotationSettings.barHeight - (barElements.length - ((i + 1) * thisBarHeight)))
+            //  - (this.viewModel.settings.annotationSettings.barHeight)
+          } else {
+            barElements[i].dy = this.viewModel.settings.axisSettings.axis === "None" ? 20 + addToBar : 40 + addToBar;
+          }
+
+        } else {
+          if (barElements[i].Top) {
+            barElements[i].dy = this.viewModel.settings.annotationSettings.spacing * (-1 * countTopBar)
+            countTopBar++;
+          } else {
+            barElements[i].dy = this.viewModel.settings.axisSettings.axis === "None" ? this.viewModel.settings.annotationSettings.spacing * countBottomBar + addToBar : this.viewModel.settings.annotationSettings.spacing * countBottomBar + 20 + addToBar;
+            countBottomBar++;
+
+          }
+        }
+
         return firstBarY + thisBarHeight * i
       }
     }
@@ -787,20 +835,60 @@ export class Visual implements IVisual {
       bar.exit().remove()
     } else {
       let bars = {}
+
+      const MINIMUM_BAR_HEIGHT = 4
+      let amount = barElements.length,
+        smallestBar = Math.max(this.viewModel.settings.annotationSettings.barHeight / amount, MINIMUM_BAR_HEIGHT),
+        interval = (this.viewModel.settings.annotationSettings.barHeight - smallestBar) / (amount - 1),
+        totalSpace = this.viewModel.settings.annotationSettings.barHeight
+
       barElements.forEach((barElement, i) => {
 
+        if (i === 0) {
+          //if first bar, total height
+          thisBarHeight = this.viewModel.settings.annotationSettings.barHeight
+        } else if (i === amount - 1) {
+          //if last bar, smallest bar
+          thisBarHeight = smallestBar
+        } else {
+          totalSpace = totalSpace - interval
+          thisBarHeight = totalSpace
+        }
 
-
-        // if (i === 0) {
-        // thisBarHeight = this.viewModel.settings.annotationSettings.barHeight
-        // } else {
-        thisBarHeight = this.viewModel.settings.annotationSettings.barHeight / (i + 1)
-        // }
-
-        let dynamicY = this.viewModel.settings.annotationSettings.barHeight - thisBarHeight
+        // let dynamicY = this.viewModel.settings.annotationSettings.barHeight - thisBarHeight
+        // let addToBar = this.viewModel.settings.annotationSettings.barHeight - (thisBarHeight * (i))
 
         let finalY = (this.viewModel.settings.annotationSettings.barHeight - thisBarHeight) / 2
+
+        // barElement.y = finalY
+        // if (this.viewModel.settings.annotationSettings.stagger) {
+        //   barElement.y = barElement.top ? marginTopStagger : marginTopStagger + finalY;
+
+        // if (barElements[i].Top) {
+        //   barElements[i].dy = this.viewModel.settings.annotationSettings.spacing * (-1 * countTopBar)
+        //   countTopBar--;
+        // } else {
+        //   barElements[i].dy = this.viewModel.settings.axisSettings.axis === "None" ? this.viewModel.settings.annotationSettings.spacing * countBottomBar + addToBar : this.viewModel.settings.annotationSettings.spacing * countBottomBar + 20 + addToBar;
+        //   countBottomBar--;
+
+        // }
+
+        // } else {
+        //   barElement.y = barElement.top ? marginTop : marginTop + finalY;
+
+        //   if (barElements[i].Top) {
+        // barElements[i].dy = 20 - (thisBarHeight * (i + 1))
+        // } else {
+        // barElements[i].dy = this.viewModel.settings.axisSettings.axis === "None" ? 20 + addToBar : 40 + addToBar;
+        // }
+
+
+        // }
+
+
+        // console.log(barElement)
         barY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger + finalY : marginTop + finalY
+
         bars[i] = this.svgGroupMain.selectAll(`.bar${i}`)
           .data([barElement])
 
@@ -873,7 +961,7 @@ export class Visual implements IVisual {
 
     //keeps track of count for stagger positioning
     let countBottom = graphElements.filter(el => !el.Top).length;
-    let countTop = graphElements.filter(el => el.Top).length;;
+    let countTop = graphElements.filter(el => el.Top).length;
 
     const style = svgAnnotations[this.viewModel.settings.annotationSettings.annotationStyle]
     let alignment = {
@@ -893,7 +981,7 @@ export class Visual implements IVisual {
       // element.x = this.padding + scale(element.Value);
       element.x = this.padding + scale(element.Value);
 
-      if (element.customFormat && element.labelOrientation !== "Auto") {
+      if (element.labelOrientation !== "Auto") {
         alignment.note.align = element.labelOrientation
       } else {
         alignment.note.align = this.getAnnotationOrientation(element)
@@ -917,11 +1005,16 @@ export class Visual implements IVisual {
         // element.x = false;
         // element.y = false;
         // this.persistCoord(element) //resets coord to false so previous are deleted. Also being delayed but work fine because of if statements
-        element.dy = element.Top ? -20 : this.viewModel.settings.axisSettings.axis === "None" ? 20 : 40;
+        if (!element.dy) {
+          element.dy = element.Top ? -20 : this.viewModel.settings.axisSettings.axis === "None" ? 20 : 40;
+
+        }
         // element.dx = element.Value == d3.max(graphElements, function (d) { return d.Value; }) ? -0.1 : 0;
 
         // element.x = this.padding + scale(element.Value);
-        element.y = element.Top ? marginTop : marginTop + this.viewModel.settings.annotationSettings.barHeight;
+        if (!element.y) {
+          element.y = element.Top ? marginTop : marginTop + this.viewModel.settings.annotationSettings.barHeight;
+        }
         // }
       }
 
@@ -945,9 +1038,13 @@ export class Visual implements IVisual {
         // this.persistCoord(element)
 
         // element.x = this.padding + scale(element.Value);
-        element.y = element.Top ? marginTopStagger : marginTopStagger + this.viewModel.settings.annotationSettings.barHeight;
+        if (!element.y) {
+          element.y = element.Top ? marginTopStagger : marginTopStagger + this.viewModel.settings.annotationSettings.barHeight;
 
-        element.dy = element.Top ? this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) : this.viewModel.settings.axisSettings.axis === "None" ? this.viewModel.settings.annotationSettings.spacing * countBottom : this.viewModel.settings.annotationSettings.spacing * countBottom + 20;
+        }
+        if (!element.dy) {
+          element.dy = element.Top ? this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) : this.viewModel.settings.axisSettings.axis === "None" ? this.viewModel.settings.annotationSettings.spacing * countBottom : this.viewModel.settings.annotationSettings.spacing * countBottom + 20;
+        }
         // element.dx = element.Value == d3.max(graphElements, function (d) { return d.Value; }) ? -0.1 : 0;
       }
       // }      
