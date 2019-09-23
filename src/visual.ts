@@ -705,10 +705,14 @@ export class Visual implements IVisual {
 
       if (graphElement["Top"]) {
         marginTop = 50
-        marginTopStagger += 10
+        // marginTopStagger += 10
         marginTopStagger += this.viewModel.settings.annotationSettings.spacing
       }
     });
+
+    if (this.viewModel.settings.annotationSettings.overlapStyle !== "edge") {
+      marginTopStagger += 20
+    }
 
     // marginTopStagger = marginTopStagger + (graphElements.filter(el => el.top).length * this.viewModel.settings.annotationSettings.spacing)
 
@@ -833,6 +837,7 @@ export class Visual implements IVisual {
         .attr('height', thisBarHeight)
 
       bar.exit().remove()
+
     } else {
       let bars = {}
 
@@ -918,6 +923,7 @@ export class Visual implements IVisual {
     //   format: format,
     //   // formatSingleValues: true
     // });
+
 
     let x_axis
     if (this.viewModel.settings.axisSettings.axis === "Percentage") {
@@ -1088,18 +1094,43 @@ export class Visual implements IVisual {
         countBottom--;
       }
 
+      let selectionManager = this.selectionManager;
       // handle context menu - right click
       this.svgGroupMain.on('contextmenu', () => {
         const mouseEvent: MouseEvent = d3.event as MouseEvent;
         const eventTarget: EventTarget = mouseEvent.target;
         let dataPoint: any = d3.select(<Element>eventTarget).datum();
-        this.selectionManager.showContextMenu(dataPoint ? dataPoint.selectionId : {}, {
+        selectionManager.showContextMenu(dataPoint ? dataPoint.selectionId : {}, {
           x: mouseEvent.clientX,
           y: mouseEvent.clientY
         });
         mouseEvent.preventDefault();
       });
 
+      this.svg.on('click', () => {
+        const mouseEvent: MouseEvent = d3.event as MouseEvent;
+        const eventTarget: EventTarget = mouseEvent.target;
+        let dataPoint: any = d3.select(<Element>eventTarget).datum();
+
+        if (dataPoint) {
+          selectionManager.select(dataPoint.selectionId).then((ids: ISelectionId[]) => {
+            if (ids.length > 0) {
+
+              this.svgGroupMain.selectAll('rect').style('fill-opacity', 0.4)
+              d3.select(<Element>eventTarget).style('fill-opacity', 1)
+            } else {
+              this.svgGroupMain.selectAll('rect').style('fill-opacity', 1)
+
+            }
+          })
+        } else {
+          selectionManager.clear().then(() => {
+
+            this.svgGroupMain.selectAll('rect').style('fill-opacity', 1)
+          })
+        }
+
+      });
     })
 
   }
