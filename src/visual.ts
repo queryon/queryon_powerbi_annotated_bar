@@ -824,6 +824,7 @@ export class Visual implements IVisual {
       bar.enter()
         .append('rect')
         .merge(bar)
+        .attr('class', 'bar')
         .attr('width', function (d) {
           return scale(d.Value);
         })
@@ -901,6 +902,7 @@ export class Visual implements IVisual {
           .append('rect')
           .merge(bars[i])
           .attr('class', `.bar${i}`)
+          .attr('class', 'bar')
           .attr('width', function (d) {
             return scale(d.Value);
           })
@@ -1116,17 +1118,17 @@ export class Visual implements IVisual {
           selectionManager.select(dataPoint.selectionId).then((ids: ISelectionId[]) => {
             if (ids.length > 0) {
 
-              this.svgGroupMain.selectAll('rect').style('fill-opacity', 0.4)
+              this.svgGroupMain.selectAll('.bar').style('fill-opacity', 0.4)
               d3.select(<Element>eventTarget).style('fill-opacity', 1)
             } else {
-              this.svgGroupMain.selectAll('rect').style('fill-opacity', 1)
+              this.svgGroupMain.selectAll('.bar').style('fill-opacity', 1)
 
             }
           })
         } else {
           selectionManager.clear().then(() => {
 
-            this.svgGroupMain.selectAll('rect').style('fill-opacity', 1)
+            this.svgGroupMain.selectAll('.bar').style('fill-opacity', 1)
           })
         }
 
@@ -1205,6 +1207,7 @@ export class Visual implements IVisual {
       .attr('class', 'annotations')
       .style('font-size', fontSize)
       .style('font-family', fontFamily)
+      .style('background-color', 'transparent')
       .call(makeAnnotations)
 
   }

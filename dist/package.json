@@ -8,7 +8,7 @@
             "file": "resources/firstVisual10945130E24B4D6AAD5741C12ECB533D.pbiviz.json"
         }
     ],
-    "visual": {"name":"Annotated Bar","displayName":"Annotated Bar","guid":"firstVisual10945130E24B4D6AAD5741C12ECB533D","visualClassName":"Visual","version":"1.0.0","description":"Annotated bar chart","supportUrl":"www.queryon.com","gitHubUrl":""},
+    "visual": {"name":"Overlapping Bar","displayName":"Overlapping Bar","guid":"firstVisual10945130E24B4D6AAD5741C12ECB533D","visualClassName":"Visual","version":"1.0.0","description":"Overlapping bar chart","supportUrl":"www.queryon.com","gitHubUrl":""},
     "metadata": {
         "pbivizjson": {
             "resourceId": "rId0"
