@@ -836,11 +836,11 @@ export class Visual implements IVisual {
       bar.enter()
         .append('rect')
         .merge(bar)
-        .attr('class', 'bar')
+        // .attr('class', 'bar')
         .attr('width', function (d) {
           return scale(d.Value);
         })
-
+        .attr('class', el => `bar selector_${el.Category.replace(/\W/g, '')}`)
         .attr('x', this.padding)
         .attr('fill', function (d, i) {
 
@@ -914,10 +914,11 @@ export class Visual implements IVisual {
           .append('rect')
           .merge(bars[i])
           .attr('class', `.bar${i}`)
-          .attr('class', 'bar')
+          .attr('class', el => `bar selector_${el.Category.replace(/\W/g, '')}`)
           .attr('width', function (d) {
             return scale(d.Value);
           })
+          // .attr('class', `selector_${bars[i].Category}`)
 
           .attr('x', this.padding)
           .attr('fill', function (d, i) {
@@ -1099,18 +1100,55 @@ export class Visual implements IVisual {
         .type(type)
 
 
+      // .on('click', el => {
+      //   // const mouseEvent: MouseEvent = d3.event as MouseEvent;
+      //   // const eventTarget: EventTarget = mouseEvent.target;
+      //   // let dataPoint: any = d3.select(<Element>eventTarget).datum();
+
+      //   // selectionManager.select(el.selectionId).then((ids: ISelectionId[]) => {
+      //   console.log(el)
+      //   // if (ids.length > 0) {
+
+      //   //   this.svgGroupMain.selectAll('.bar').style('fill-opacity', 0.4)
+      //   //   d3.select(<Element>eventTarget).style('fill-opacity', 1)
+      //   // } else {
+      //   //   this.svgGroupMain.selectAll('.bar').style('fill-opacity', 1)
+
+      //   // }
+      //   // })
+      // })
+
       // if (this.viewModel.settings.annotationSettings.editMode) {
       //   makeAnnotations.editMode(true)
       //     .on('dragend', (el) => {
       //       this.persistCoord(el)
       //     })
 
-      // }
+      // })
 
+      //print annotation
 
-      //print annotations
+      this.svgGroupMain
+        .append("g")
+        .attr('class', 'annotations')
+        .style('font-size', element.AnnotationSize)
+        .style('font-family', element.AnnotationFont)
+        .style('background-color', 'transparent')
+        .call(makeAnnotations)
+        .on('click', el => {
+          selectionManager.select(element.selectionId).then((ids: ISelectionId[]) => {
 
-      this.appendAnnotaions(makeAnnotations, element.AnnotationFont, element.AnnotationSize);
+            if (ids.length > 0) {
+              this.svgGroupMain.selectAll('.bar').style('fill-opacity', 0.4)
+              d3.select(`.selector_${element.Category.replace(/\W/g, '')}`).style('fill-opacity', 1)
+
+            } else {
+              this.svgGroupMain.selectAll('.bar').style('fill-opacity', 1)
+
+            }
+
+          })
+        })
 
       if (element.Top) {
         countTop--;
@@ -1223,15 +1261,5 @@ export class Visual implements IVisual {
 
   }
 
-  private appendAnnotaions(makeAnnotations: svgAnnotations.default<unknown>, fontFamily: string, fontSize: number) {
-    this.svgGroupMain
-      .append("g")
-      .attr('class', 'annotations')
-      .style('font-size', fontSize)
-      .style('font-family', fontFamily)
-      .style('background-color', 'transparent')
-      .call(makeAnnotations)
-
-  }
 
 }
