@@ -218,6 +218,23 @@
                         ]
                     }
                 },
+                "labelInfo": {
+                    "displayName": "Label style",
+                    "type": {
+                        "enumeration": [{
+                                "displayName": "Category, data value",
+                                "value": "Auto"
+                            },
+                            {
+                                "displayName": "Category",
+                                "value": "Category"
+                            }, {
+                                "displayName": "Data value",
+                                "value": "Display"
+                            }
+                        ]
+                    }
+                },
                 "barHeight": {
                     "displayName": "Bar Height",
                     "type": {

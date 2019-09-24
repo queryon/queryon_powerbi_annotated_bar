@@ -31,7 +31,7 @@ import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration
 
 // import { VisualSettings, dataPointSettings, AxisSettings, BarSettings } from "./settings";
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
-import { text, thresholdSturges } from "d3";
+import { text, thresholdSturges, image } from "d3";
 
 //Global settings to the visual
 interface AnnotatedBarSettings {
@@ -45,7 +45,8 @@ interface AnnotatedBarSettings {
     barHeight: number,
     displayUnits: number,
     precision: any,
-    overlapStyle: string
+    overlapStyle: string,
+    labelInfo: string,
   },
   axisSettings: {
     bold: boolean,
@@ -116,6 +117,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       displayUnits: 0,
       precision: false,
       overlapStyle: 'full',
+      labelInfo: 'Auto',
       // editMode: false,
       separator: ":"
     },
@@ -175,7 +177,8 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       annotationStyle: getValue<string>(objects, 'annotationSettings', 'annotationStyle', defaultSettings.annotationSettings.annotationStyle),
       displayUnits: getValue<number>(objects, 'annotationSettings', 'displayUnits', defaultSettings.annotationSettings.displayUnits),
       precision: getValue<any>(objects, 'annotationSettings', 'precision', defaultSettings.annotationSettings.precision),
-      overlapStyle: getValue<string>(objects, 'annotationSettings', 'overlapStyle', defaultSettings.annotationSettings.overlapStyle)
+      overlapStyle: getValue<string>(objects, 'annotationSettings', 'overlapStyle', defaultSettings.annotationSettings.overlapStyle),
+      labelInfo: getValue<string>(objects, 'annotationSettings', 'labelInfo', defaultSettings.annotationSettings.labelInfo)
     },
     axisSettings: {
       axis: getValue<any>(objects, 'axisSettings', 'axis', defaultSettings.axisSettings.axis),
@@ -398,7 +401,6 @@ export class Visual implements IVisual {
     this.host = options.host
     this.selectionIdBuilder = this.host.createSelectionIdBuilder();
     this.selectionManager = this.host.createSelectionManager();
-
   }
 
   public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
@@ -413,6 +415,7 @@ export class Visual implements IVisual {
           objectName: objectName,
           properties: {
             overlapStyle: this.viewModel.settings.annotationSettings.overlapStyle,
+            labelInfo: this.viewModel.settings.annotationSettings.labelInfo,
             barHeight: this.viewModel.settings.annotationSettings.barHeight,
             sameAsBarColor: this.viewModel.settings.annotationSettings.sameAsBarColor,
             displayUnits: this.viewModel.settings.annotationSettings.displayUnits,
@@ -431,10 +434,20 @@ export class Visual implements IVisual {
           });
         }
 
+        if (this.viewModel.settings.annotationSettings.labelInfo === 'Auto') {
+
+          objectEnumeration.push({
+            objectName: objectName,
+            properties: {
+              separator: this.viewModel.settings.annotationSettings.separator,
+            },
+            selector: null
+          });
+        }
+
         objectEnumeration.push({
           objectName: objectName,
           properties: {
-            separator: this.viewModel.settings.annotationSettings.separator,
             // editMode: this.viewModel.settings.annotationSettings.editMode,
             annotationStyle: this.viewModel.settings.annotationSettings.annotationStyle
           },
@@ -656,7 +669,7 @@ export class Visual implements IVisual {
 
 
 
-  public update(options: VisualUpdateOptions) {
+  public update(options) {
     this.viewModel = visualTransform(options, this.host);
 
     let marginTop = 10,
@@ -750,7 +763,6 @@ export class Visual implements IVisual {
     this.width = options.viewport.width;
     this.height = options.viewport.height;
     graphElements = graphElements.sort((x, y) => { return y.Value - x.Value })
-
 
 
     // }
@@ -1057,11 +1069,18 @@ export class Visual implements IVisual {
       }
       // }      
 
+      let annotationText
+
+      if (this.viewModel.settings.annotationSettings.labelInfo === 'Auto') {
+        annotationText = element.Category + this.viewModel.settings.annotationSettings.separator + " " + element.Display
+      } else {
+        annotationText = element[this.viewModel.settings.annotationSettings.labelInfo]
+      }
 
       annotationsData = [{
         note: {
           wrap: 900,
-          label: element.Category + this.viewModel.settings.annotationSettings.separator + " " + element.Display,
+          label: annotationText,
           bgPadding: 10
         },
         x: element.x,
