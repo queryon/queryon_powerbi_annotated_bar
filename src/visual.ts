@@ -723,9 +723,9 @@ export class Visual implements IVisual {
       }
     });
 
-    if (this.viewModel.settings.annotationSettings.overlapStyle !== "edge") {
-      marginTopStagger += 20
-    }
+    // if (this.viewModel.settings.annotationSettings.overlapStyle !== "edge") {
+    marginTopStagger += 20
+    // }
 
     // marginTopStagger = marginTopStagger + (graphElements.filter(el => el.top).length * this.viewModel.settings.annotationSettings.spacing)
 
@@ -802,28 +802,28 @@ export class Visual implements IVisual {
       let countTopBar = 1;
 
       barY = (d, i) => {
-        barElements[i].y = firstBarY + thisBarHeight * i
-        let addToBar = this.viewModel.settings.annotationSettings.barHeight - (thisBarHeight * (i))
+        // barElements[i].y = firstBarY + thisBarHeight * i
+        // let addToBar = this.viewModel.settings.annotationSettings.barHeight - (thisBarHeight * (i))
 
-        if (!this.viewModel.settings.annotationSettings.stagger) {
-          if (barElements[i].Top) {
-            // barElements[i].dy = 20 - (thisBarHeight * (i + 1))
-            barElements[i].dy = - (this.viewModel.settings.annotationSettings.barHeight - (barElements.length - ((i + 1) * thisBarHeight)))
-            //  - (this.viewModel.settings.annotationSettings.barHeight)
-          } else {
-            barElements[i].dy = this.viewModel.settings.axisSettings.axis === "None" ? 20 + addToBar : 40 + addToBar;
-          }
+        // if (!this.viewModel.settings.annotationSettings.stagger) {
+        //   if (barElements[i].Top) {
+        //     // barElements[i].dy = 20 - (thisBarHeight * (i + 1))
+        //     barElements[i].dy = - (this.viewModel.settings.annotationSettings.barHeight - (barElements.length - ((i + 1) * thisBarHeight)))
+        //     //  - (this.viewModel.settings.annotationSettings.barHeight)
+        //   } else {
+        //     barElements[i].dy = this.viewModel.settings.axisSettings.axis === "None" ? 20 + addToBar : 40 + addToBar;
+        //   }
 
-        } else {
-          if (barElements[i].Top) {
-            barElements[i].dy = this.viewModel.settings.annotationSettings.spacing * (-1 * countTopBar)
-            countTopBar++;
-          } else {
-            barElements[i].dy = this.viewModel.settings.axisSettings.axis === "None" ? this.viewModel.settings.annotationSettings.spacing * countBottomBar + addToBar : this.viewModel.settings.annotationSettings.spacing * countBottomBar + 20 + addToBar;
-            countBottomBar++;
+        // } else {
+        //   if (barElements[i].Top) {
+        //     barElements[i].dy = this.viewModel.settings.annotationSettings.spacing * (-1 * countTopBar)
+        //     countTopBar++;
+        //   } else {
+        //     barElements[i].dy = this.viewModel.settings.axisSettings.axis === "None" ? this.viewModel.settings.annotationSettings.spacing * countBottomBar + addToBar : this.viewModel.settings.annotationSettings.spacing * countBottomBar + 20 + addToBar;
+        //     countBottomBar++;
 
-          }
-        }
+        //   }
+        // }
 
         return firstBarY + thisBarHeight * i
       }
@@ -1068,7 +1068,10 @@ export class Visual implements IVisual {
         // element.dx = element.Value == d3.max(graphElements, function (d) { return d.Value; }) ? -0.1 : 0;
       }
       // }      
-
+      if (this.viewModel.settings.annotationSettings.overlapStyle === 'edge') {
+        element.y = element.Top ? element.y + this.viewModel.settings.annotationSettings.barHeight : element.y
+        element.dy = element.Top ? element.dy - this.viewModel.settings.annotationSettings.barHeight : element.dy
+      }
       let annotationText
 
       if (this.viewModel.settings.annotationSettings.labelInfo === 'Auto') {
