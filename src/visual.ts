@@ -205,100 +205,60 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
 
   //QueryOn colors to be set as default
   let customColors = ["rgb(186,215,57)", "rgb(0, 188, 178)", "rgb(121, 118, 118)", "rgb(248, 250, 239)", "rgb(105,161,151)", "rgb(78,205,196)", "rgb(246,255,212)", "rgb(166,197,207)", "rgb(215,204,182)", "rgb(67,158,157)", "rgb(122,141,45)", "rgb(162,157,167)"]
-  if (!categorical.categories) {
-    for (let i = 0, len = dataValues.length; i < len; i++) {
 
-      let defaultBarColor: Fill = {
-        solid: {
-          color: customColors[i > 12 ? i - 12 : i]
-        }
+  let length = categorical.categories ? Math.max(categorical.categories[0].values.length, categorical.values[0].values.length) : dataValues.length
+
+  for (let i = 0, len = length; i < len; i++) {
+
+    let defaultBarColor: Fill = {
+      solid: {
+        color: customColors[i > 12 ? i - 12 : i]
       }
-
-      let format: string = options.dataViews[0].categorical.values[i].source.format;
-      // let valueFormatterFactory = vf;
-      // let valueFormatter = valueFormatterFactory.create({
-      //   format: format,
-      // formatSingleValues: true
-      // });
-
-      let valueFormatter = createFormatter(format, annotatedBarSettings.annotationSettings.precision, annotatedBarSettings.annotationSettings.displayUnits);
+    }
 
 
+    let format, valueFormatter, dataPointValue, displayName, selectionId
+    valueFormatter = createFormatter(format, annotatedBarSettings.annotationSettings.precision, annotatedBarSettings.annotationSettings.displayUnits);
 
-      //getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dx', "TEST") will return TEST after drag and drop should have set correct coordinates.
-      annotatedBarDataPoints.push({
-        value: dataValues[i].values[0],
-        displayName: dataValues[i].source.displayName,
-        barColor: getCategoricalObjectValue<Fill>(categorical, i, 'barColorSelector', 'fill', defaultBarColor).solid.color,
-        LabelColor: getCategoricalObjectValue<Fill>(categorical, i, 'textFormatting', 'fill', { solid: { color: "gray" } }).solid.color,
-        FontFamily: getCategoricalObjectValue<string>(categorical, i, 'textFormatting', 'FontFamily', "Arial"),
-        fontSize: getCategoricalObjectValue<number>(categorical, i, 'textFormatting', 'fontSize', 12),
-        ShowInBar: getCategoricalObjectValue<boolean>(categorical, i, 'barColorSelector', 'ShowInBar', true),
-        dx: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dx', false),
-        dy: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dy', false),
-        x: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'x', false),
-        y: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'y', false),
-        top: getCategoricalObjectValue<boolean>(categorical, i, 'textFormatting', 'top', false),
-        labelOrientation: getCategoricalObjectValue<string>(categorical, i, 'textFormatting', 'labelOrientation', "Auto"),
-        customFormat: getCategoricalObjectValue<boolean>(categorical, i, 'textFormatting', 'customFormat', false),
-        transformed: valueFormatter.format(dataValues[i].values[0]),
-        selectionId: host.createSelectionIdBuilder()     //generates IDs for svg elements based on queryName
+    if (!categorical.categories) {
+      format = options.dataViews[0].categorical.values[i].source.format;
+      dataPointValue = dataValues[i].values[0]
+      displayName = dataValues[i].source.displayName,
+        selectionId = host.createSelectionIdBuilder()     //generates IDs for svg elements based on queryName
           .withMeasure(dataValues[i].source.queryName)
           .createSelectionId()
-      });
-    }
 
-  } else {
-    let format: string = options.dataViews[0].categorical.values[0].source.format;
-    // let valueFormatterFactory = vf;
-    // let valueFormatter = valueFormatterFactory.create({
-    //   format: format,
-    //   // formatSingleValues: true
-    // });
-
-    let valueFormatter = createFormatter(format, annotatedBarSettings.annotationSettings.precision, annotatedBarSettings.annotationSettings.displayUnits);
-
-
-    for (let i = 0, len = Math.max(categorical.categories[0].values.length, categorical.values[0].values.length); i < len; i++) {
-
-      let defaultBarColor: Fill = {
-        solid: {
-          color: customColors[i > 12 ? i - 12 : i]
-        }
-      }
-      annotatedBarDataPoints.push({
-        value: categorical.values[0].values[i],
-        displayName: categorical.categories[0].values[i].toString(),
-        barColor: getCategoricalObjectValue<Fill>(categorical, i, 'barColorSelector', 'fill', defaultBarColor).solid.color,
-        LabelColor: getCategoricalObjectValue<Fill>(categorical, i, 'textFormatting', 'fill', { solid: { color: "gray" } }).solid.color,
-        FontFamily: getCategoricalObjectValue<string>(categorical, i, 'textFormatting', 'FontFamily', "Arial"),
-        fontSize: getCategoricalObjectValue<number>(categorical, i, 'textFormatting', 'fontSize', 12),
-        ShowInBar: getCategoricalObjectValue<boolean>(categorical, i, 'barColorSelector', 'ShowInBar', true),
-        dx: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dx', false),
-        dy: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dy', false),
-        x: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'x', false),
-        y: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'y', false),
-        top: getCategoricalObjectValue<boolean>(categorical, i, 'textFormatting', 'top', false),
-        labelOrientation: getCategoricalObjectValue<string>(categorical, i, 'textFormatting', 'labelOrientation', "Auto"),
-        transformed: valueFormatter.format(categorical.values[0].values[i]),
-        customFormat: getCategoricalObjectValue<boolean>(categorical, i, 'textFormatting', 'customFormat', false),
-
-        // barColor: defaultBarColor.solid.color,
-        // LabelColor: { solid: { color: "gray" } }.solid.color,
-        // FontFamily: "Arial",
-        // fontSize: 12,
-        // ShowInBar: true,
-        // dx: false,
-        // dy: false, x: false, y: false, top: false,
-
-        selectionId: host.createSelectionIdBuilder()     //generates IDs for svg elements based on queryName
-          .withCategory(category, i)
-          .createSelectionId()
-      });
-
+    } else {
+      format = options.dataViews[0].categorical.values[0].source.format;
+      dataPointValue = categorical.values[0].values[i]
+      displayName = categorical.categories[0].values[i].toString()
+      selectionId = host.createSelectionIdBuilder()     //generates IDs for svg elements based on queryName
+        .withCategory(category, i)
+        .createSelectionId()
 
     }
+
+    let dataPoint = {
+      value: dataPointValue,
+      displayName: displayName,
+      barColor: getCategoricalObjectValue<Fill>(categorical, i, 'barColorSelector', 'fill', defaultBarColor).solid.color,
+      LabelColor: getCategoricalObjectValue<Fill>(categorical, i, 'textFormatting', 'fill', { solid: { color: "gray" } }).solid.color,
+      FontFamily: getCategoricalObjectValue<string>(categorical, i, 'textFormatting', 'FontFamily', "Arial"),
+      fontSize: getCategoricalObjectValue<number>(categorical, i, 'textFormatting', 'fontSize', 12),
+      ShowInBar: getCategoricalObjectValue<boolean>(categorical, i, 'barColorSelector', 'ShowInBar', true),
+      dx: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dx', false),
+      dy: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dy', false),
+      x: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'x', false),
+      y: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'y', false),
+      top: getCategoricalObjectValue<boolean>(categorical, i, 'textFormatting', 'top', false),
+      labelOrientation: getCategoricalObjectValue<string>(categorical, i, 'textFormatting', 'labelOrientation', "Auto"),
+      customFormat: getCategoricalObjectValue<boolean>(categorical, i, 'textFormatting', 'customFormat', false),
+      transformed: valueFormatter.format(dataPointValue),
+      selectionId: selectionId
+    }
+    annotatedBarDataPoints.push(dataPoint);
   }
+
 
   return {
     dataPoints: annotatedBarDataPoints,
@@ -719,12 +679,12 @@ export class Visual implements IVisual {
       if (graphElement["Top"]) {
         marginTop = 50
         // marginTopStagger += 10
-        marginTopStagger += this.viewModel.settings.annotationSettings.spacing
+        marginTopStagger += (this.viewModel.settings.annotationSettings.spacing)
       }
     });
 
     // if (this.viewModel.settings.annotationSettings.overlapStyle !== "edge") {
-    marginTopStagger += 20
+    // marginTopStagger += 20
     // }
 
     // marginTopStagger = marginTopStagger + (graphElements.filter(el => el.top).length * this.viewModel.settings.annotationSettings.spacing)
