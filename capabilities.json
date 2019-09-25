@@ -214,6 +214,10 @@
                             {
                                 "displayName": "Edge to Edge",
                                 "value": "edge"
+                            },
+                            {
+                                "displayName": "Stacked",
+                                "value": "stacked"
                             }
                         ]
                     }
@@ -278,6 +282,10 @@
                             {
                                 "displayName": "Annotation Callout Curve",
                                 "value": "annotationCalloutCurve"
+                            },
+                            {
+                                "displayName": "Text Only",
+                                "value": "textOnly"
                             }
                         ]
                     }

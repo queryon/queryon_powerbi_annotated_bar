@@ -238,6 +238,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
 
     }
 
+
     let dataPoint = {
       value: dataPointValue,
       displayName: displayName,
@@ -525,29 +526,7 @@ export class Visual implements IVisual {
 
 
 
-        // }
         break;
-
-      // Code works the same with or without manualPosition section. Ideally it will be hidden 
-      // case "manualPosition":
-      //   for (let barDataPoint of this.viewModel.dataPoints) {
-      //     objectEnumeration.push({
-      //       objectName: objectName,
-      //       displayName: barDataPoint.displayName + " dx",
-      //       properties: {
-      //         dx: barDataPoint.dx
-      //       },
-      //       selector: barDataPoint.selectionId.getSelector()
-      //     }, {
-      //         objectName: objectName,
-      //         displayName: barDataPoint.displayName + " dy",
-      //         properties: {
-      //           dy: barDataPoint.dy
-      //         },
-      //         selector: barDataPoint.selectionId.getSelector()
-      //       });
-      //   }
-      //   break;
       case 'axisSettings':
         objectEnumeration.push({
           objectName: objectName,
@@ -636,31 +615,29 @@ export class Visual implements IVisual {
       marginTopStagger = 10
     let graphElements = []
 
-
-    // this.viewModel.settings.barSettings.barHeight = Math.max(5, this.viewModel.settings.barSettings.barHeight);
-    // this.viewModel.settings.barSettings.barHeight = Math.min(200, this.viewModel.settings.barSettings.barHeight);
-
-    //handles modeling tab with dynamic formatting
-
-    // var format: string = options.dataViews[0].categorical.values[0].source.format;
-    // console.log(options.dataViews[0].categorical.values)
-    // var valueFormatterFactory = vf;
-    // var valueFormatter = valueFormatterFactory.create({
-    //   format: format,
-    //   formatSingleValues: true
-    // });
-
     this.viewModel.dataPoints.forEach((element, i) => {
+      let graphElement = {}
+      let barValue = 0
       let value = element.value
+
+      if (this.viewModel.settings.annotationSettings.overlapStyle === 'stacked') {
+        for (let j = i; j >= 0; j--) {
+          const previousElement = this.viewModel.dataPoints[j];
+          barValue += previousElement.value
+        }
+        graphElement["x"] = barValue - (value / 2)
+      }
+
+      barValue = !barValue ? element.value : barValue
+
       let displayName = element.displayName
       let annotationColor = !element.customFormat ? this.viewModel.settings.textFormatting.fill : element.LabelColor
       let annotationSize = !element.customFormat ? this.viewModel.settings.textFormatting.fontSize : element.fontSize
       let annotationFont = !element.customFormat ? this.viewModel.settings.textFormatting.FontFamily : element.FontFamily
       let labelOrientation = !element.customFormat ? this.viewModel.settings.textFormatting.labelOrientation : element.labelOrientation
 
-      let graphElement = {}
       graphElement["Category"] = displayName;
-      graphElement["Value"] = value;
+      graphElement["Value"] = barValue;
       graphElement["Color"] = element.barColor
       graphElement["ShowInBar"] = element.ShowInBar
       graphElement["AnnotationColor"] = this.viewModel.settings.annotationSettings.sameAsBarColor && element.ShowInBar ? element.barColor : annotationColor;
@@ -673,6 +650,7 @@ export class Visual implements IVisual {
       graphElement["labelOrientation"] = labelOrientation
       graphElement["customFormat"] = element.customFormat
       graphElement["dx"] = 0
+
       graphElements.push(graphElement)
 
 
@@ -748,7 +726,7 @@ export class Visual implements IVisual {
     let barY, thisBarHeight,
       barElements = graphElements.filter(element => element.ShowInBar === true),
       firstBarY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop
-    if (this.viewModel.settings.annotationSettings.overlapStyle === "full") {
+    if (this.viewModel.settings.annotationSettings.overlapStyle === "full" || this.viewModel.settings.annotationSettings.overlapStyle.includes('stacked')) {
       barY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop
       thisBarHeight = this.viewModel.settings.annotationSettings.barHeight
     }
@@ -944,7 +922,7 @@ export class Visual implements IVisual {
     let countBottom = graphElements.filter(el => !el.Top).length;
     let countTop = graphElements.filter(el => el.Top).length;
 
-    const style = svgAnnotations[this.viewModel.settings.annotationSettings.annotationStyle]
+    const style = this.viewModel.settings.annotationSettings.annotationStyle !== "textOnly" ? svgAnnotations[this.viewModel.settings.annotationSettings.annotationStyle] : svgAnnotations['annotationLabel']
     let alignment = {
       "className": "custom",
       "note": { "align": "dynamic" }
@@ -960,7 +938,7 @@ export class Visual implements IVisual {
     // handle annotations positioning
     graphElements.forEach(element => {
       // element.x = this.padding + scale(element.Value);
-      element.x = this.padding + scale(element.Value);
+      element.x = !element.x ? this.padding + scale(element.Value) : this.padding + scale(element.x)
 
       if (element.labelOrientation !== "Auto") {
         alignment.note.align = element.labelOrientation
@@ -1059,6 +1037,11 @@ export class Visual implements IVisual {
         .annotations(annotationsData)
         .type(type)
 
+      if (this.viewModel.settings.annotationSettings.annotationStyle === 'textOnly') {
+        makeAnnotations
+          .disable(["connector"])
+
+      }
 
       // .on('click', el => {
       //   // const mouseEvent: MouseEvent = d3.event as MouseEvent;
