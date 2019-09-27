@@ -36,6 +36,28 @@
         "textFormatting": {
             "displayName": "Label formatting",
             "properties": {
+                "annotationStyle": {
+                    "displayName": "Annotation Style",
+                    "type": {
+                        "enumeration": [{
+                                "displayName": "Annotation Label",
+                                "value": "annotationLabel"
+                            },
+                            {
+                                "displayName": "Annotation Callout",
+                                "value": "annotationCallout"
+                            },
+                            {
+                                "displayName": "Annotation Callout Curve",
+                                "value": "annotationCalloutCurve"
+                            },
+                            {
+                                "displayName": "Text Only",
+                                "value": "textOnly"
+                            }
+                        ]
+                    }
+                },
                 "allTextTop": {
                     "displayName": "Labels on top",
                     "type": {
@@ -268,28 +290,7 @@
                         "numeric": true
                     }
                 },
-                "annotationStyle": {
-                    "displayName": "Annotation Style",
-                    "type": {
-                        "enumeration": [{
-                                "displayName": "Annotation Label",
-                                "value": "annotationLabel"
-                            },
-                            {
-                                "displayName": "Annotation Callout",
-                                "value": "annotationCallout"
-                            },
-                            {
-                                "displayName": "Annotation Callout Curve",
-                                "value": "annotationCalloutCurve"
-                            },
-                            {
-                                "displayName": "Text Only",
-                                "value": "textOnly"
-                            }
-                        ]
-                    }
-                },
+
                 "separator": {
                     "displayName": "Separator",
                     "type": {

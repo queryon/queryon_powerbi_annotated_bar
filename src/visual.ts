@@ -36,7 +36,6 @@ import { text, thresholdSturges, image } from "d3";
 //Global settings to the visual
 interface AnnotatedBarSettings {
   annotationSettings: {
-    annotationStyle: string,
     stagger: boolean,
     spacing: any,
     // editMode: boolean,
@@ -61,6 +60,7 @@ interface AnnotatedBarSettings {
   textFormatting: {
     allTextTop: boolean,
     labelOrientation: string,
+    annotationStyle: string,
     fill: any,
     FontFamily: string,
     fontSize: number
@@ -110,7 +110,6 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
   let defaultSettings: AnnotatedBarSettings = {
     annotationSettings: {
       sameAsBarColor: false,
-      annotationStyle: "annotationLabel",
       stagger: true,
       spacing: 20,
       barHeight: 30,
@@ -134,6 +133,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
     textFormatting: {
       allTextTop: false,
       labelOrientation: "Auto",
+      annotationStyle: "annotationLabel",
       fontSize: 12,
       FontFamily: 'Arial',
       fill: { solid: { color: 'gray' } }
@@ -174,7 +174,6 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       barHeight: getValue<number>(objects, 'annotationSettings', 'barHeight', defaultSettings.annotationSettings.barHeight),
       // editMode: getValue<boolean>(objects, 'annotationSettings', 'editMode', defaultSettings.annotationSettings.editMode),
       spacing: getValue<any>(objects, 'annotationSettings', 'spacing', defaultSettings.annotationSettings.spacing),
-      annotationStyle: getValue<string>(objects, 'annotationSettings', 'annotationStyle', defaultSettings.annotationSettings.annotationStyle),
       displayUnits: getValue<number>(objects, 'annotationSettings', 'displayUnits', defaultSettings.annotationSettings.displayUnits),
       precision: getValue<any>(objects, 'annotationSettings', 'precision', defaultSettings.annotationSettings.precision),
       overlapStyle: getValue<string>(objects, 'annotationSettings', 'overlapStyle', defaultSettings.annotationSettings.overlapStyle),
@@ -194,6 +193,8 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
     textFormatting: {
       allTextTop: getValue<boolean>(objects, 'textFormatting', 'allTextTop', defaultSettings.textFormatting.allTextTop),
       labelOrientation: getValue<string>(objects, 'textFormatting', 'labelOrientation', defaultSettings.textFormatting.labelOrientation),
+      annotationStyle: getValue<string>(objects, 'textFormatting', 'annotationStyle', defaultSettings.textFormatting.annotationStyle),
+
       fontSize: getValue<number>(objects, 'textFormatting', 'fontSize', defaultSettings.textFormatting.fontSize),
       FontFamily: getValue<string>(objects, 'textFormatting', 'FontFamily', defaultSettings.textFormatting.FontFamily),
       fill: getValue<any>(objects, 'textFormatting', 'fill', defaultSettings.textFormatting.fill).solid.color
@@ -300,6 +301,7 @@ export interface graphElements {
   textWidth: number;
   customFormat: boolean;
   showInBar: boolean;
+  annotationText: string;
 }
 
 //getCategoricalObjectValue takes in categorical: all datapoints objects, dataPoint's index, object name: properties' categories, property name and default value. 
@@ -385,15 +387,15 @@ export class Visual implements IVisual {
           },
           selector: null
         });
-        if (this.viewModel.settings.annotationSettings.stagger) {
-          objectEnumeration.push({
-            objectName: objectName,
-            properties: {
-              spacing: this.viewModel.settings.annotationSettings.spacing,
-            },
-            selector: null
-          });
-        }
+        // if (this.viewModel.settings.annotationSettings.stagger) {
+        //   objectEnumeration.push({
+        //     objectName: objectName,
+        //     properties: {
+        //       spacing: this.viewModel.settings.annotationSettings.spacing,
+        //     },
+        //     selector: null
+        //   });
+        // }
 
         if (this.viewModel.settings.annotationSettings.labelInfo === 'Auto') {
 
@@ -406,14 +408,7 @@ export class Visual implements IVisual {
           });
         }
 
-        objectEnumeration.push({
-          objectName: objectName,
-          properties: {
-            // editMode: this.viewModel.settings.annotationSettings.editMode,
-            annotationStyle: this.viewModel.settings.annotationSettings.annotationStyle
-          },
-          selector: null
-        });
+
 
         break
       case 'textFormatting':
@@ -446,6 +441,7 @@ export class Visual implements IVisual {
           objectName: objectName,
           properties: {
             labelOrientation: this.viewModel.settings.textFormatting.labelOrientation,
+            annotationStyle: this.viewModel.settings.textFormatting.annotationStyle,
             FontFamily: this.viewModel.settings.textFormatting.FontFamily,
             fontSize: this.viewModel.settings.textFormatting.fontSize
           },
@@ -650,16 +646,34 @@ export class Visual implements IVisual {
       graphElement["selectionId"] = element.selectionId
       graphElement["AnnotationSize"] = annotationSize;
       graphElement["AnnotationFont"] = annotationFont;
-      graphElement["textWidth"] = this.getTextWidth(`${graphElement["Category"] + this.viewModel.settings.annotationSettings.separator + " " + graphElement["Value"]}`, annotationSize, annotationFont)
+      if (this.viewModel.settings.annotationSettings.labelInfo === 'Auto') {
+        graphElement["annotationText"] = graphElement["Category"] + this.viewModel.settings.annotationSettings.separator + " " + graphElement["Display"]
+      } else {
+        graphElement["annotationText"] = graphElement[this.viewModel.settings.annotationSettings.labelInfo]
+      }
+      graphElement["textWidth"] = this.getTextWidth(graphElement["annotationText"], annotationSize, annotationFont)
       graphElement["labelOrientation"] = labelOrientation
       graphElement["customFormat"] = element.customFormat
       graphElement["dx"] = 0
 
+
       graphElements.push(graphElement)
+      let textHeight = this.getTextHeight(graphElement["annotationText"], annotationSize, annotationFont)
+
+      if (this.viewModel.settings.annotationSettings.spacing < textHeight) {
+        this.viewModel.settings.annotationSettings.spacing = textHeight
+
+        if (graphElement["Top"]) {
+          marginTopStagger += textHeight
+
+        }
+      }
+
+
 
 
       if (graphElement["Top"]) {
-        marginTop = 50
+        marginTop = Math.max(50, textHeight + 30)
         // marginTopStagger += 10
         // marginTopStagger += (this.viewModel.settings.annotationSettings.spacing)
       }
@@ -790,8 +804,7 @@ export class Visual implements IVisual {
             return this.padding + scale(Math.min(d.Value, 0))
             // return scale(20000)
           })
-          .attr('fill', function (d, i) {
-
+          .attr('fill', function (d) {
             return d.Color
           })
           .attr('y', barY)
@@ -982,7 +995,7 @@ export class Visual implements IVisual {
     let countBottom = graphElements.filter(el => !el.Top).length;
     let countTop = graphElements.filter(el => el.Top).length;
 
-    const style = this.viewModel.settings.annotationSettings.annotationStyle !== "textOnly" ? svgAnnotations[this.viewModel.settings.annotationSettings.annotationStyle] : svgAnnotations['annotationLabel']
+    const style = this.viewModel.settings.textFormatting.annotationStyle !== "textOnly" ? svgAnnotations[this.viewModel.settings.textFormatting.annotationStyle] : svgAnnotations['annotationLabel']
     let alignment = {
       "className": "custom",
       "note": { "align": "dynamic" }
@@ -1071,18 +1084,11 @@ export class Visual implements IVisual {
         element.y = element.Top ? element.y + this.viewModel.settings.annotationSettings.barHeight : element.y
         element.dy = element.Top ? element.dy - this.viewModel.settings.annotationSettings.barHeight : element.dy
       }
-      let annotationText
-
-      if (this.viewModel.settings.annotationSettings.labelInfo === 'Auto') {
-        annotationText = element.Category + this.viewModel.settings.annotationSettings.separator + " " + element.Display
-      } else {
-        annotationText = element[this.viewModel.settings.annotationSettings.labelInfo]
-      }
 
       annotationsData = [{
         note: {
           wrap: 900,
-          label: annotationText,
+          label: element.annotationText,
           bgPadding: 10
         },
         x: element.x,
@@ -1097,7 +1103,7 @@ export class Visual implements IVisual {
         .annotations(annotationsData)
         .type(type)
 
-      if (this.viewModel.settings.annotationSettings.annotationStyle === 'textOnly') {
+      if (this.viewModel.settings.textFormatting.annotationStyle === 'textOnly') {
         makeAnnotations
           .disable(["connector"])
 
@@ -1232,6 +1238,28 @@ export class Visual implements IVisual {
     return textWidth
   }
 
+  private getTextHeight(textString: string, fontSize: number, fontFamily: string) {
+    let textData = [textString]
+
+    let textHeight
+
+    //Measure text's width for correct positioning of annotation
+    this.svg.append('g')
+      .selectAll('.dummyText')
+      .data(textData)
+      .enter()
+      .append("text")
+      .attr("font-family", fontFamily)
+      .attr("font-size", fontSize)
+      .text(function (d) { return d })
+      .each(function (d, i) {
+        let thisHeight = this.getBBox().height
+        textHeight = thisHeight
+        this.remove() // remove them just after displaying them
+      })
+
+    return textHeight
+  }
   private getAnnotationOrientation(element) {
     if (element.textWidth + element.x > this.width - this.padding * 2) {
       return "right"
