@@ -204,7 +204,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
   let annotatedBarDataPoints: AnnotatedBarDataPoint[] = [];
 
   //QueryOn colors to be set as default
-  let customColors = ["rgb(186,215,57)", "rgb(0, 188, 178)", "rgb(121, 118, 118)", "rgb(248, 250, 239)", "rgb(105,161,151)", "rgb(78,205,196)", "rgb(246,255,212)", "rgb(166,197,207)", "rgb(215,204,182)", "rgb(67,158,157)", "rgb(122,141,45)", "rgb(162,157,167)"]
+  let customColors = ["rgb(186,215,57)", "rgb(0, 188, 178)", "rgb(121, 118, 118)", "rgb(105,161,151)", "rgb(78,205,196)", "rgb(246,255,212)", "rgb(166,197,207)", "rgb(215,204,182)", "rgb(67,158,157)", "rgb(122,141,45)", "rgb(162,157,167)"]
 
   let length = categorical.categories ? Math.max(categorical.categories[0].values.length, categorical.values[0].values.length) : dataValues.length
 
@@ -212,7 +212,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
 
     let defaultBarColor: Fill = {
       solid: {
-        color: customColors[i > 12 ? i - 12 : i]
+        color: customColors[i > 11 ? i % 11 : i]
       }
     }
 
@@ -771,6 +771,7 @@ export class Visual implements IVisual {
 
     switch (this.viewModel.settings.annotationSettings.overlapStyle) {
       case "full":
+        barElements = barElements.filter(el => el.Value < 0).sort((a, b) => (a.value > b.value) ? 1 : -1).concat(barElements.filter(el => el.Value >= 0))
         barY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop
         thisBarHeight = this.viewModel.settings.annotationSettings.barHeight
 
