@@ -693,28 +693,24 @@ export class Visual implements IVisual {
 
     if (this.viewModel.settings.axisSettings.axis === "Values") {
       let dynamicPadding = Math.max(this.getTextWidth(valueFormatter.format(this.minScale), this.viewModel.settings.axisSettings.fontSize, this.viewModel.settings.axisSettings.fontFamily), this.getTextWidth(valueFormatter.format(this.maxScale), this.viewModel.settings.axisSettings.fontSize, this.viewModel.settings.axisSettings.fontFamily)) / 2
-
       this.padding = dynamicPadding
     }
+
     graphElements = graphElements.filter(element => {
       return element.Value >= this.minScale && element.Value <= this.maxScale
     })
 
-    // this.renderVisual(options.viewport.width, options.viewport.height, graphElements.sort((x, y) => { return y.Value - x.Value }))
 
     this.width = options.viewport.width;
     this.height = options.viewport.height;
     graphElements = graphElements.sort((x, y) => { return y.Value - x.Value })
 
 
-    // }
-
-    // public renderVisual(width: number, height: number, graphElements: graphElements[]) {
-
     //sets an empty canva
     this.svgGroupMain.selectAll("g").remove();
 
     this.svgGroupMain.selectAll("rect").remove();
+
     let scale = d3.scaleLinear()
       .domain([this.minScale !== false ? this.minScale : d3.min(graphElements, function (d) { return d.Value }), this.maxScale !== false ? this.maxScale : d3.max(graphElements, function (d) { return d.Value; })]) //min and max data from input
       .range([0, this.width - (this.padding * 2)]); //min and max width in px           
@@ -725,59 +721,7 @@ export class Visual implements IVisual {
       .attr("stroke", 'gray');
 
 
-
-    //bar settings
-    let barY, thisBarHeight,
-      barElements = graphElements.filter(element => element.ShowInBar === true),
-      firstBarY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop
-
-    if (this.viewModel.settings.annotationSettings.overlapStyle === "full" || this.viewModel.settings.annotationSettings.overlapStyle.includes('stacked')) {
-      barY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop
-      thisBarHeight = this.viewModel.settings.annotationSettings.barHeight
-    }
-    else if (this.viewModel.settings.annotationSettings.overlapStyle === "edge") {
-
-      barElements = barElements.reverse()
-      thisBarHeight = this.viewModel.settings.annotationSettings.barHeight / barElements.length
-      // let countBottomBar = 0;
-      // let countTopBar = barElements.filter(el => el.Top).length;
-      let countBottomBar = 1;
-      let countTopBar = 1;
-
-      barY = (d, i) => {
-        // barElements[i].y = firstBarY + thisBarHeight * i
-        // let addToBar = this.viewModel.settings.annotationSettings.barHeight - (thisBarHeight * (i))
-
-        // if (!this.viewModel.settings.annotationSettings.stagger) {
-        //   if (barElements[i].Top) {
-        //     // barElements[i].dy = 20 - (thisBarHeight * (i + 1))
-        //     barElements[i].dy = - (this.viewModel.settings.annotationSettings.barHeight - (barElements.length - ((i + 1) * thisBarHeight)))
-        //     //  - (this.viewModel.settings.annotationSettings.barHeight)
-        //   } else {
-        //     barElements[i].dy = this.viewModel.settings.axisSettings.axis === "None" ? 20 + addToBar : 40 + addToBar;
-        //   }
-
-        // } else {
-        //   if (barElements[i].Top) {
-        //     barElements[i].dy = this.viewModel.settings.annotationSettings.spacing * (-1 * countTopBar)
-        //     countTopBar++;
-        //   } else {
-        //     barElements[i].dy = this.viewModel.settings.axisSettings.axis === "None" ? this.viewModel.settings.annotationSettings.spacing * countBottomBar + addToBar : this.viewModel.settings.annotationSettings.spacing * countBottomBar + 20 + addToBar;
-        //     countBottomBar++;
-
-        //   }
-        // }
-
-        return firstBarY + thisBarHeight * i
-      }
-    }
-
-    // let valueFormatterFactory = vf;
-    // let valueFormatter = valueFormatterFactory.create({
-    //   format: format,
-    //   // formatSingleValues: true
-    // });
-
+    //axis settings
 
     let x_axis
     if (this.viewModel.settings.axisSettings.axis === "Percentage") {
@@ -944,220 +888,219 @@ export class Visual implements IVisual {
 
       }
 
-      if (this.viewModel.settings.annotationSettings.overlapStyle !== "inside") {
-        // && this.viewModel.settings.annotationSettings.overlapStyle !== "stacked") {
 
-        let bar = this.svgGroupMain.selectAll('rect')
-          .data(barElements)
+      //bar settings
 
-        bar.enter()
-          .append('rect')
-          .merge(bar)
-          // .attr('class', 'bar')
-          .attr('width', function (d) {
-            return Math.abs(scale(d.Value) - scale(0))
-          })
-          .attr('class', el => `bar selector_${el.Category.replace(/\W/g, '')}`)
-          .attr('x', d => {
-            return this.padding + scale(Math.min(d.Value, 0))
-            // return scale(20000)
-          })
-          .attr('fill', function (d, i) {
-
-            return d.Color
-          })
-          .attr('y', barY)
-          .attr('height', thisBarHeight)
-        bar.exit().remove()
-
-      } else if (this.viewModel.settings.annotationSettings.overlapStyle === "inside") {
-        let bars = {}
-
-        const MINIMUM_BAR_HEIGHT = 4
-        let amount = barElements.length,
-          smallestBar = Math.max(this.viewModel.settings.annotationSettings.barHeight / amount, MINIMUM_BAR_HEIGHT),
-          interval = (this.viewModel.settings.annotationSettings.barHeight - smallestBar) / (amount - 1),
-          totalSpace = this.viewModel.settings.annotationSettings.barHeight
-
-        barElements.forEach((barElement, i) => {
-
-          if (i === 0) {
-            //if first bar, total height
-            thisBarHeight = this.viewModel.settings.annotationSettings.barHeight
-          } else if (i === amount - 1) {
-            //if last bar, smallest bar
-            thisBarHeight = smallestBar
-          } else {
-            totalSpace = totalSpace - interval
-            thisBarHeight = totalSpace
-          }
-
-          // let dynamicY = this.viewModel.settings.annotationSettings.barHeight - thisBarHeight
-          // let addToBar = this.viewModel.settings.annotationSettings.barHeight - (thisBarHeight * (i))
-
-          let finalY = (this.viewModel.settings.annotationSettings.barHeight - thisBarHeight) / 2
-
-          // barElement.y = finalY
-          // if (this.viewModel.settings.annotationSettings.stagger) {
-          //   barElement.y = barElement.top ? marginTopStagger : marginTopStagger + finalY;
-
-          // if (barElements[i].Top) {
-          //   barElements[i].dy = this.viewModel.settings.annotationSettings.spacing * (-1 * countTopBar)
-          //   countTopBar--;
-          // } else {
-          //   barElements[i].dy = this.viewModel.settings.axisSettings.axis === "None" ? this.viewModel.settings.annotationSettings.spacing * countBottomBar + addToBar : this.viewModel.settings.annotationSettings.spacing * countBottomBar + 20 + addToBar;
-          //   countBottomBar--;
-
-          // }
-
-          // } else {
-          //   barElement.y = barElement.top ? marginTop : marginTop + finalY;
-
-          //   if (barElements[i].Top) {
-          // barElements[i].dy = 20 - (thisBarHeight * (i + 1))
-          // } else {
-          // barElements[i].dy = this.viewModel.settings.axisSettings.axis === "None" ? 20 + addToBar : 40 + addToBar;
-          // }
+      //bar settings
+      let barY, thisBarHeight,
+        barElements = graphElements.filter(element => element.ShowInBar === true),
+        firstBarY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop,
+        bar
 
 
-          // }
+      switch (this.viewModel.settings.annotationSettings.overlapStyle) {
+        case "full":
+          barY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop
+          thisBarHeight = this.viewModel.settings.annotationSettings.barHeight
 
+          bar = this.svgGroupMain.selectAll('rect')
+            .data(barElements)
 
-          // console.log(barElement)
-          barY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger + finalY : marginTop + finalY
-
-          bars[i] = this.svgGroupMain.selectAll(`.bar${i}`)
-            .data([barElement])
-
-          bars[i].enter()
+          bar.enter()
             .append('rect')
-            .merge(bars[i])
-            .attr('class', `.bar${i}`)
+            .merge(bar)
+            // .attr('class', 'bar')
+            .attr('width', function (d) {
+              return Math.abs(scale(d.Value) - scale(0))
+            })
             .attr('class', el => `bar selector_${el.Category.replace(/\W/g, '')}`)
-            // .attr('width', function (d) {
-            //   return scale(d.Value);
-            // })
-
             .attr('x', d => {
               return this.padding + scale(Math.min(d.Value, 0))
               // return scale(20000)
             })
-            .attr('width', function (d) {
-              return Math.abs(scale(d.Value) - scale(0))
-            })
-            // .attr('class', `selector_${bars[i].Category}`)
-
-            // .attr('x', this.padding)
             .attr('fill', function (d, i) {
 
               return d.Color
             })
             .attr('y', barY)
             .attr('height', thisBarHeight)
+          bar.exit().remove()
+          break
+        case "stacked":
+          barY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop
+          thisBarHeight = this.viewModel.settings.annotationSettings.barHeight
 
-          bars[i].exit().remove()
+          bar = this.svgGroupMain.selectAll('rect')
+            .data(barElements)
 
-        })
+          bar.enter()
+            .append('rect')
+            .merge(bar)
+            // .attr('class', 'bar')
+            .attr('width', function (d) {
+              return Math.abs(scale(d.Value) - scale(0))
+            })
+            .attr('class', el => `bar selector_${el.Category.replace(/\W/g, '')}`)
+            .attr('x', d => {
+              return this.padding + scale(Math.min(d.Value, 0))
+              // return scale(20000)
+            })
+            .attr('fill', function (d, i) {
 
-        // }
-        // else {
-        //   // barElements = barElements.filter(el => el.Value >= 0).concat(barElements.filter(el => el.Value < 0))
-        //   // console.log(barElements)
+              return d.Color
+            })
+            .attr('y', barY)
+            .attr('height', thisBarHeight)
+          bar.exit().remove()
+          break
+        case "edge":
+          barElements = barElements.reverse()
+          thisBarHeight = this.viewModel.settings.annotationSettings.barHeight / barElements.length
+          // let countBottomBar = 0;
+          // let countTopBar = barElements.filter(el => el.Top).length;
+          let countBottomBar = 1;
+          let countTopBar = 1;
+
+          barY = (d, i) => {
+            // barElements[i].y = firstBarY + thisBarHeight * i
+            // let addToBar = this.viewModel.settings.annotationSettings.barHeight - (thisBarHeight * (i))
+
+            // if (!this.viewModel.settings.annotationSettings.stagger) {
+            //   if (barElements[i].Top) {
+            //     // barElements[i].dy = 20 - (thisBarHeight * (i + 1))
+            //     barElements[i].dy = - (this.viewModel.settings.annotationSettings.barHeight - (barElements.length - ((i + 1) * thisBarHeight)))
+            //     //  - (this.viewModel.settings.annotationSettings.barHeight)
+            //   } else {
+            //     barElements[i].dy = this.viewModel.settings.axisSettings.axis === "None" ? 20 + addToBar : 40 + addToBar;
+            //   }
+
+            // } else {
+            //   if (barElements[i].Top) {
+            //     barElements[i].dy = this.viewModel.settings.annotationSettings.spacing * (-1 * countTopBar)
+            //     countTopBar++;
+            //   } else {
+            //     barElements[i].dy = this.viewModel.settings.axisSettings.axis === "None" ? this.viewModel.settings.annotationSettings.spacing * countBottomBar + addToBar : this.viewModel.settings.annotationSettings.spacing * countBottomBar + 20 + addToBar;
+            //     countBottomBar++;
+
+            //   }
+            // }
+
+            return firstBarY + thisBarHeight * i
+          }
+
+          bar = this.svgGroupMain.selectAll('rect')
+            .data(barElements)
+
+          bar.enter()
+            .append('rect')
+            .merge(bar)
+            // .attr('class', 'bar')
+            .attr('width', function (d) {
+              return Math.abs(scale(d.Value) - scale(0))
+            })
+            .attr('class', el => `bar selector_${el.Category.replace(/\W/g, '')}`)
+            .attr('x', d => {
+              return this.padding + scale(Math.min(d.Value, 0))
+              // return scale(20000)
+            })
+            .attr('fill', function (d, i) {
+
+              return d.Color
+            })
+            .attr('y', barY)
+            .attr('height', thisBarHeight)
+          bar.exit().remove()
+          break
+        case "inside":
+          let bars = {}
+
+          const MINIMUM_BAR_HEIGHT = 4
+          let amount = barElements.length,
+            smallestBar = Math.max(this.viewModel.settings.annotationSettings.barHeight / amount, MINIMUM_BAR_HEIGHT),
+            interval = (this.viewModel.settings.annotationSettings.barHeight - smallestBar) / (amount - 1),
+            totalSpace = this.viewModel.settings.annotationSettings.barHeight
+
+          barElements.forEach((barElement, i) => {
+
+            if (i === 0) {
+              //if first bar, total height
+              thisBarHeight = this.viewModel.settings.annotationSettings.barHeight
+            } else if (i === amount - 1) {
+              //if last bar, smallest bar
+              thisBarHeight = smallestBar
+            } else {
+              totalSpace = totalSpace - interval
+              thisBarHeight = totalSpace
+            }
+
+            // let dynamicY = this.viewModel.settings.annotationSettings.barHeight - thisBarHeight
+            // let addToBar = this.viewModel.settings.annotationSettings.barHeight - (thisBarHeight * (i))
+
+            let finalY = (this.viewModel.settings.annotationSettings.barHeight - thisBarHeight) / 2
+
+            // barElement.y = finalY
+            // if (this.viewModel.settings.annotationSettings.stagger) {
+            //   barElement.y = barElement.top ? marginTopStagger : marginTopStagger + finalY;
+
+            // if (barElements[i].Top) {
+            //   barElements[i].dy = this.viewModel.settings.annotationSettings.spacing * (-1 * countTopBar)
+            //   countTopBar--;
+            // } else {
+            //   barElements[i].dy = this.viewModel.settings.axisSettings.axis === "None" ? this.viewModel.settings.annotationSettings.spacing * countBottomBar + addToBar : this.viewModel.settings.annotationSettings.spacing * countBottomBar + 20 + addToBar;
+            //   countBottomBar--;
+
+            // }
+
+            // } else {
+            //   barElement.y = barElement.top ? marginTop : marginTop + finalY;
+
+            //   if (barElements[i].Top) {
+            // barElements[i].dy = 20 - (thisBarHeight * (i + 1))
+            // } else {
+            // barElements[i].dy = this.viewModel.settings.axisSettings.axis === "None" ? 20 + addToBar : 40 + addToBar;
+            // }
 
 
-        //   const series = d3.stack()
-        //     .keys(["Value"])
-        //     .offset(d3.stackOffsetDiverging)
-        //     (barElements);
-
-        //   let x = d3.scaleLinear()
-        //     // .domain([d3.min(series, function (serie) {
-        //     //   return d3.min(serie, function (d) { return d[0]; });
-        //     // }), d3.max(series, function stackMax(serie) {
-        //     //   return d3.max(serie, function (d) { return d[1]; });
-        //     // })])
-        //     .domain(d3.extent(barElements, function (d) {
-        //       return d.Value;
-        //     }))
-        //     .range([0, this.width - (this.padding * 2)]); //min and max width in px           
+            // }
 
 
-        //   console.log(series)
-        //   // d3.scaleLinear()
-        //   //   .domain([this.minScale !== false ? this.minScale : d3.min(graphElements, function (d) { return d.Value }), this.maxScale !== false ? this.maxScale : d3.max(graphElements, function (d) { return d.Value; })]) //min and max data from input
-        //   //   .range([0, this.width - (this.padding * 2)]); //min and max width in px           
-        //   // function stackMin(serie) {
-        //   //   return d3.min(serie, function (d) { return d[0]; });
-        //   // }
-        //   // function stackMax(serie) {
-        //   //   return d3.max(serie, function (d) { return d[1]; });
-        //   // }
-        //   let bar = this.svgGroupMain.selectAll('rect')
-        //     .data(barElements)
+            // console.log(barElement)
+            barY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger + finalY : marginTop + finalY
 
-        //   bar.enter()
-        //     .append('rect')
-        //     .merge(bar)
-        //     // .attr('class', 'bar')
-        //     .attr('width', function (d) { return Math.abs(x(d.Value) - x(0)) })
-        //     .attr('class', el => `bar selector_${el.Category.replace(/\W/g, '')}`)
-        //     .attr('x', function (d) { return x(Math.min(0, d.Value)) })
-        //     .attr('fill', function (d, i) {
+            bars[i] = this.svgGroupMain.selectAll(`.bar${i}`)
+              .data([barElement])
 
-        //       return d.Color
-        //     })
-        //     .attr('y', barY)
-        //     .attr('height', thisBarHeight)
+            bars[i].enter()
+              .append('rect')
+              .merge(bars[i])
+              .attr('class', `.bar${i}`)
+              .attr('class', el => `bar selector_${el.Category.replace(/\W/g, '')}`)
+              // .attr('width', function (d) {
+              //   return scale(d.Value);
+              // })
 
-        //   bar.exit().remove()
+              .attr('x', d => {
+                return this.padding + scale(Math.min(d.Value, 0))
+                // return scale(20000)
+              })
+              .attr('width', function (d) {
+                return Math.abs(scale(d.Value) - scale(0))
+              })
+              // .attr('class', `selector_${bars[i].Category}`)
 
-        // }
+              // .attr('x', this.padding)
+              .attr('fill', function (d, i) {
 
+                return d.Color
+              })
+              .attr('y', barY)
+              .attr('height', thisBarHeight)
 
+            bars[i].exit().remove()
 
-        // let bar = this.svgGroupMain.append("g")
-        //   .selectAll("g")
-        //   .data(series)
-        //   .enter().append("g")
-        //   .attr("fill", function (d, i) { return barElements[i].Color })
-        //   .selectAll("rect")
-        //   .data(function (d) { return d; })
-        //   .enter().append("rect")
-        //   .attr("width", function (d) { return Math.abs(x(d.value) - x(0)) })
-        //   .attr("x", function (d) { return x(Math.min(0, d.value)) })
-        //   .attr("y", barY)
-        //   .attr("height", thisBarHeight)
-
-        // bar.exit().remove()
-
+          })
+          break
       }
-      // .on('click', el => {
-      //   // const mouseEvent: MouseEvent = d3.event as MouseEvent;
-      //   // const eventTarget: EventTarget = mouseEvent.target;
-      //   // let dataPoint: any = d3.select(<Element>eventTarget).datum();
-
-      //   // selectionManager.select(el.selectionId).then((ids: ISelectionId[]) => {
-      //   console.log(el)
-      //   // if (ids.length > 0) {
-
-      //   //   this.svgGroupMain.selectAll('.bar').style('fill-opacity', 0.4)
-      //   //   d3.select(<Element>eventTarget).style('fill-opacity', 1)
-      //   // } else {
-      //   //   this.svgGroupMain.selectAll('.bar').style('fill-opacity', 1)
-
-      //   // }
-      //   // })
-      // })
-
-      // if (this.viewModel.settings.annotationSettings.editMode) {
-      //   makeAnnotations.editMode(true)
-      //     .on('dragend', (el) => {
-      //       this.persistCoord(el)
-      //     })
-
-      // })
-
-      //print annotation
 
       this.svgGroupMain
         .append("g")
@@ -1188,6 +1131,7 @@ export class Visual implements IVisual {
       }
 
       let selectionManager = this.selectionManager;
+
       // handle context menu - right click
       this.svgGroupMain.on('contextmenu', () => {
         const mouseEvent: MouseEvent = d3.event as MouseEvent;
@@ -1200,6 +1144,7 @@ export class Visual implements IVisual {
         mouseEvent.preventDefault();
       });
 
+      //handle filter and transparency
       this.svg.on('click', () => {
         const mouseEvent: MouseEvent = d3.event as MouseEvent;
         const eventTarget: EventTarget = mouseEvent.target;
