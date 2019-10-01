@@ -205,7 +205,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
   let annotatedBarDataPoints: AnnotatedBarDataPoint[] = [];
 
   //QueryOn colors to be set as default
-  let customColors = ["rgb(186,215,57)", "rgb(0, 188, 178)", "rgb(121, 118, 118)", "rgb(105,161,151)", "rgb(78,205,196)", "rgb(246,255,212)", "rgb(166,197,207)", "rgb(215,204,182)", "rgb(67,158,157)", "rgb(122,141,45)", "rgb(162,157,167)"]
+  let customColors = ["rgb(186,215,57)", "rgb(0, 188, 178)", "rgb(121, 118, 118)", "rgb(105,161,151)", "rgb(78,205,196)", "rgb(166,197,207)", "rgb(215,204,182)", "rgb(67,158,157)", "rgb(122,141,45)", "rgb(162,157,167)"]
 
   let length = categorical.categories ? Math.max(categorical.categories[0].values.length, categorical.values[0].values.length) : dataValues.length
 
@@ -213,7 +213,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
 
     let defaultBarColor: Fill = {
       solid: {
-        color: customColors[i > 11 ? i % 11 : i]
+        color: customColors[i > 10 ? i % 10 : i]
       }
     }
 
@@ -673,7 +673,7 @@ export class Visual implements IVisual {
 
 
       if (graphElement["Top"]) {
-        marginTop = Math.max(50, textHeight + 30)
+        marginTop = Math.max(marginTop, textHeight + 30)
         // marginTopStagger += 10
         // marginTopStagger += (this.viewModel.settings.annotationSettings.spacing)
       }
@@ -796,12 +796,15 @@ export class Visual implements IVisual {
           .append('rect')
           .merge(bar)
           // .attr('class', 'bar')
-          .attr('width', function (d) {
-            return Math.abs(scale(d.Value) - scale(0))
+          .attr('width', d => {
+            let min = Math.max(this.minScale, 0)
+            return Math.abs(scale(d.Value) - scale(min))
           })
           .attr('class', el => `bar selector_${el.Category.replace(/\W/g, '')}`)
           .attr('x', d => {
-            return this.padding + scale(Math.min(d.Value, 0))
+
+            let min = Math.max(this.minScale, 0)
+            return this.padding + scale(Math.min(d.Value, min))
             // return scale(20000)
           })
           .attr('fill', function (d) {
@@ -816,7 +819,9 @@ export class Visual implements IVisual {
         thisBarHeight = this.viewModel.settings.annotationSettings.barHeight
 
         //sort negative values for correct overlay
-        barElements = barElements.filter(el => el.Value < 0).sort((a, b) => (a.value > b.value) ? 1 : -1).concat(barElements.filter(el => el.Value >= 0))
+        barElements = barElements.filter(el => el.Value < 0).sort((a, b) => (a.value > b.value) ? -1 : 1).concat(barElements.filter(el => el.Value >= 0))
+
+
         bar = this.svgGroupMain.selectAll('rect')
           .data(barElements)
 
@@ -824,12 +829,15 @@ export class Visual implements IVisual {
           .append('rect')
           .merge(bar)
           // .attr('class', 'bar')
-          .attr('width', function (d) {
-            return Math.abs(scale(d.Value) - scale(0))
+          .attr('width', d => {
+            let min = Math.max(this.minScale, 0)
+            return Math.abs(scale(d.Value) - scale(min))
           })
           .attr('class', el => `bar selector_${el.Category.replace(/\W/g, '')}`)
           .attr('x', d => {
-            return this.padding + scale(Math.min(d.Value, 0))
+
+            let min = Math.max(this.minScale, 0)
+            return this.padding + scale(Math.min(d.Value, min))
             // return scale(20000)
           })
           .attr('fill', function (d, i) {
@@ -847,7 +855,6 @@ export class Visual implements IVisual {
         // let countTopBar = barElements.filter(el => el.Top).length;
         let countBottomBar = 1;
         let countTopBar = 1;
-
         barY = (d, i) => {
           // barElements[i].y = firstBarY + thisBarHeight * i
           // let addToBar = this.viewModel.settings.annotationSettings.barHeight - (thisBarHeight * (i))
@@ -882,12 +889,16 @@ export class Visual implements IVisual {
           .append('rect')
           .merge(bar)
           // .attr('class', 'bar')
-          .attr('width', function (d) {
-            return Math.abs(scale(d.Value) - scale(0))
+          .attr('width', d => {
+            let min = Math.max(this.minScale, 0)
+            return Math.abs(scale(d.Value) - scale(min))
           })
           .attr('class', el => `bar selector_${el.Category.replace(/\W/g, '')}`)
           .attr('x', d => {
-            return this.padding + scale(Math.min(d.Value, 0))
+
+            let min = Math.max(this.minScale, 0)
+            return this.padding + scale(Math.min(d.Value, min))
+            // return this.padding + scale(Math.min(d.Value, 0))
             // return scale(20000)
           })
           .attr('fill', function (d, i) {
@@ -967,11 +978,13 @@ export class Visual implements IVisual {
             // })
 
             .attr('x', d => {
-              return this.padding + scale(Math.min(d.Value, 0))
+              let min = Math.max(this.minScale, 0)
+              return this.padding + scale(Math.min(d.Value, min))
               // return scale(20000)
             })
-            .attr('width', function (d) {
-              return Math.abs(scale(d.Value) - scale(0))
+            .attr('width', d => {
+              let min = Math.max(this.minScale, 0)
+              return Math.abs(scale(d.Value) - scale(min))
             })
             // .attr('class', `selector_${bars[i].Category}`)
 
@@ -1009,7 +1022,7 @@ export class Visual implements IVisual {
 
 
     // handle annotations positioning
-    graphElements.forEach(element => {
+    graphElements.forEach((element, i) => {
       // element.x = this.padding + scale(element.Value);
       element.x = !element.x ? this.padding + scale(element.Value) : this.padding + scale(element.x)
 
@@ -1037,6 +1050,24 @@ export class Visual implements IVisual {
         // element.x = false;
         // element.y = false;
         // this.persistCoord(element) //resets coord to false so previous are deleted. Also being delayed but work fine because of if statements
+
+        if (this.viewModel.settings.annotationSettings.overlapStyle === 'edge' && element.Top) {
+          if (element.ShowInBar) {
+
+            let index = barElements.indexOf(element)
+
+            element.y = marginTop + thisBarHeight * index
+            // console.log(element.y)
+            // element.dy = -20
+            element.dy = - (thisBarHeight * (index + 1))
+          }
+          else {
+            element.y = marginTop + this.viewModel.settings.annotationSettings.barHeight
+            element.dy = -20 - this.viewModel.settings.annotationSettings.barHeight
+          }
+        }
+
+
         if (!element.dy) {
           element.dy = element.Top ? -20 : this.viewModel.settings.axisSettings.axis === "None" ? 20 : 40;
 
@@ -1070,6 +1101,25 @@ export class Visual implements IVisual {
         // this.persistCoord(element)
 
         // element.x = this.padding + scale(element.Value);
+
+        if (this.viewModel.settings.annotationSettings.overlapStyle === 'edge' && element.Top) {
+          if (element.ShowInBar) {
+
+            let index = barElements.indexOf(element)
+
+            element.y = marginTopStagger + thisBarHeight * index
+            // console.log(element.y)
+            // element.dy = -20
+            element.dy = - (thisBarHeight * (index + 1))
+            element.dy += this.viewModel.settings.annotationSettings.spacing * (-1 * countTop)
+          }
+          else {
+            element.y = marginTopStagger + this.viewModel.settings.annotationSettings.barHeight
+            element.dy = this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) - this.viewModel.settings.annotationSettings.barHeight - 20
+          }
+        }
+
+
         if (!element.y) {
           element.y = element.Top ? marginTopStagger : marginTopStagger + this.viewModel.settings.annotationSettings.barHeight;
 
@@ -1080,10 +1130,10 @@ export class Visual implements IVisual {
         // element.dx = element.Value == d3.max(graphElements, function (d) { return d.Value; }) ? -0.1 : 0;
       }
       // }      
-      if (this.viewModel.settings.annotationSettings.overlapStyle === 'edge') {
-        element.y = element.Top ? element.y + this.viewModel.settings.annotationSettings.barHeight : element.y
-        element.dy = element.Top ? element.dy - this.viewModel.settings.annotationSettings.barHeight : element.dy
-      }
+      // if (this.viewModel.settings.annotationSettings.overlapStyle === 'edge') {
+      //   element.y = element.Top ? element.y + this.viewModel.settings.annotationSettings.barHeight : element.y
+      //   element.dy = element.Top ? element.dy - this.viewModel.settings.annotationSettings.barHeight : element.dy
+      // }
 
       annotationsData = [{
         note: {
