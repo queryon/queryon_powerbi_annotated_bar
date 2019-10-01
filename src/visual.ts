@@ -785,7 +785,7 @@ export class Visual implements IVisual {
 
     switch (this.viewModel.settings.annotationSettings.overlapStyle) {
       case "full":
-        barElements = barElements.filter(el => el.Value < 0).sort((a, b) => (a.value > b.value) ? 1 : -1).concat(barElements.filter(el => el.Value >= 0))
+        barElements = barElements.filter(el => el.Value < 0).sort((a, b) => (a.Value > b.Value) ? 1 : -1).concat(barElements.filter(el => el.Value >= 0))
         barY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop
         thisBarHeight = this.viewModel.settings.annotationSettings.barHeight
 
@@ -797,13 +797,16 @@ export class Visual implements IVisual {
           .merge(bar)
           // .attr('class', 'bar')
           .attr('width', d => {
-            let min = Math.max(this.minScale, 0)
+            // let min = Math.max(this.minScale, 0)
+            let min = 0
             return Math.abs(scale(d.Value) - scale(min))
           })
           .attr('class', el => `bar selector_${el.Category.replace(/\W/g, '')}`)
           .attr('x', d => {
 
-            let min = Math.max(this.minScale, 0)
+            // let min = Math.max(this.minScale, 0)
+
+            let min = 0
             return this.padding + scale(Math.min(d.Value, min))
             // return scale(20000)
           })
@@ -819,7 +822,7 @@ export class Visual implements IVisual {
         thisBarHeight = this.viewModel.settings.annotationSettings.barHeight
 
         //sort negative values for correct overlay
-        barElements = barElements.filter(el => el.Value < 0).sort((a, b) => (a.value > b.value) ? -1 : 1).concat(barElements.filter(el => el.Value >= 0))
+        barElements = barElements.filter(el => el.Value < 0).sort((a, b) => (a.Value > b.Value) ? 1 : -1).concat(barElements.filter(el => el.Value >= 0))
 
 
         bar = this.svgGroupMain.selectAll('rect')
