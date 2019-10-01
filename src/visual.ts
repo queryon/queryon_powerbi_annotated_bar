@@ -680,6 +680,9 @@ export class Visual implements IVisual {
       }
     });
 
+    if (this.viewModel.settings.textFormatting.annotationStyle === 'annotationCallout' || this.viewModel.settings.textFormatting.annotationStyle === 'annotationCalloutCurve') {
+      this.viewModel.settings.annotationSettings.spacing += 10
+    }
     // if (this.viewModel.settings.annotationSettings.overlapStyle !== "edge") {
     // marginTopStagger += 20
     // }
@@ -1063,7 +1066,7 @@ export class Visual implements IVisual {
             element.y = marginTop + thisBarHeight * index
             // console.log(element.y)
             // element.dy = -20
-            element.dy = - (thisBarHeight * (index + 1))
+            element.dy = - (thisBarHeight * (index)) - 20
           }
           else {
             element.y = marginTop + this.viewModel.settings.annotationSettings.barHeight
@@ -1114,12 +1117,12 @@ export class Visual implements IVisual {
             element.y = marginTopStagger + thisBarHeight * index
             // console.log(element.y)
             // element.dy = -20
-            element.dy = - (thisBarHeight * (index + 1))
+            element.dy = - (thisBarHeight * (index))
             element.dy += this.viewModel.settings.annotationSettings.spacing * (-1 * countTop)
           }
           else {
             element.y = marginTopStagger + this.viewModel.settings.annotationSettings.barHeight
-            element.dy = this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) - this.viewModel.settings.annotationSettings.barHeight - 20
+            element.dy = this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) - this.viewModel.settings.annotationSettings.barHeight
           }
         }
 
