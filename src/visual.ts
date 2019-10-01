@@ -219,7 +219,6 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
 
 
     let format, valueFormatter, dataPointValue, displayName, selectionId
-    valueFormatter = createFormatter(format, annotatedBarSettings.annotationSettings.precision, annotatedBarSettings.annotationSettings.displayUnits);
 
     if (!categorical.categories) {
       format = options.dataViews[0].categorical.values[i].source.format;
@@ -239,6 +238,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
 
     }
 
+    valueFormatter = createFormatter(format, annotatedBarSettings.annotationSettings.precision, annotatedBarSettings.annotationSettings.displayUnits);
 
     let dataPoint = {
       value: dataPointValue,
@@ -656,6 +656,7 @@ export class Visual implements IVisual {
       graphElement["customFormat"] = element.customFormat
       graphElement["dx"] = 0
 
+      console.log(graphElement["annotationText"])
 
       graphElements.push(graphElement)
       let textHeight = this.getTextHeight(graphElement["annotationText"], annotationSize, annotationFont)
