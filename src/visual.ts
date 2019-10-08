@@ -85,6 +85,7 @@ interface AnnotatedBarDataPoint {
   transformed: any
   customFormat: boolean
   labelOrientation: string
+  highlight: boolean
 };
 
 interface AnnotatedBarViewModel {
@@ -127,7 +128,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       fontFamily: 'Arial',
       bold: false,
       manualScale: true,
-      barMin: 0,
+      barMin: false,
       barMax: false
     },
     textFormatting: {
@@ -158,12 +159,15 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
 
   let categorical = dataViews[0].categorical;
   let dataValues = categorical.values;
-  let category, dataValue
+  let category, dataValue, highlightsArray
+
 
   if (categorical.categories) {
     category = categorical.categories[0];
     dataValue = categorical.values[0];
-
+    if (dataValue.highlights) {
+      highlightsArray = categorical.values[0].highlights
+    }
   }
 
   let annotatedBarSettings: AnnotatedBarSettings = {
@@ -256,7 +260,8 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       labelOrientation: getCategoricalObjectValue<string>(categorical, i, 'textFormatting', 'labelOrientation', "Auto"),
       customFormat: getCategoricalObjectValue<boolean>(categorical, i, 'textFormatting', 'customFormat', false),
       transformed: valueFormatter.format(dataPointValue),
-      selectionId: selectionId
+      selectionId: selectionId,
+      highlight: highlightsArray && highlightsArray[i] ? true : false
     }
     annotatedBarDataPoints.push(dataPoint);
   }
@@ -350,6 +355,7 @@ export class Visual implements IVisual {
   private height: number;
   private minScale: any;
   private maxScale: any;
+  private highlighted: boolean;
   private host: IVisualHost;
   private selectionManager: ISelectionManager;
   private selectionIdBuilder: ISelectionIdBuilder;
@@ -364,6 +370,7 @@ export class Visual implements IVisual {
     this.host = options.host
     this.selectionIdBuilder = this.host.createSelectionIdBuilder();
     this.selectionManager = this.host.createSelectionManager();
+    this.highlighted = false;
   }
 
   public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
@@ -607,6 +614,17 @@ export class Visual implements IVisual {
   public update(options) {
     this.viewModel = visualTransform(options, this.host);
 
+
+    let categorical = options.dataViews[0].categorical;
+    if (categorical.categories && categorical.values[0].highlights) {
+      this.highlighted = true
+      console.log(categorical.values[0].highlights)
+    } else {
+      this.highlighted = false
+    }
+
+
+
     let marginTop = 10,
       marginTopStagger = 20
     let graphElements = []
@@ -655,8 +673,9 @@ export class Visual implements IVisual {
       graphElement["labelOrientation"] = labelOrientation
       graphElement["customFormat"] = element.customFormat
       graphElement["dx"] = 0
+      graphElement["highlight"] = element.highlight
 
-      console.log(graphElement["annotationText"])
+      // console.log(graphElement["annotationText"])
 
       graphElements.push(graphElement)
       let textHeight = this.getTextHeight(graphElement["annotationText"], annotationSize, annotationFont)
@@ -689,10 +708,11 @@ export class Visual implements IVisual {
 
     // marginTopStagger = marginTopStagger + (graphElements.filter(el => el.top).length * this.viewModel.settings.annotationSettings.spacing)
 
+    let conditionalMinimum = d3.min(graphElements, function (d) { return d.Value }) > 0 ? 0 : d3.min(graphElements, function (d) { return d.Value })
 
     //handles auto and manual scale
     if (!this.viewModel.settings.axisSettings.manualScale) {
-      this.minScale = d3.min(graphElements, function (d) { return d.Value })
+      this.minScale = conditionalMinimum
       this.maxScale = d3.max(graphElements, function (d) { return d.Value })
       this.viewModel.settings.axisSettings.barMin = false;
       this.viewModel.settings.axisSettings.barMax = false;
@@ -701,7 +721,7 @@ export class Visual implements IVisual {
       // this.minScale = this.viewModel.settings.axisSettings.barMin === false ? d3.min(graphElements, function (d) { return d.Value }) : d3.min(graphElements, function (d) { return d.Value }) < this.viewModel.settings.axisSettings.barMin ? d3.min(graphElements, function (d) { return d.Value }) : this.viewModel.settings.axisSettings.barMin;
       this.maxScale = this.viewModel.settings.axisSettings.barMax === false ? d3.max(graphElements, function (d) { return d.Value }) : this.viewModel.settings.axisSettings.barMax;
 
-      this.minScale = this.viewModel.settings.axisSettings.barMin === false ? d3.min(graphElements, function (d) { return d.Value }) : this.viewModel.settings.axisSettings.barMin;
+      this.minScale = this.viewModel.settings.axisSettings.barMin === false ? conditionalMinimum : this.viewModel.settings.axisSettings.barMin;
 
     }
 
@@ -817,8 +837,16 @@ export class Visual implements IVisual {
           .attr('fill', function (d) {
             return d.Color
           })
+          .attr('fill-opacity', (d) => {
+            if (this.highlighted) {
+              return d.highlight ? 1 : 0.1
+            } else {
+              return 1
+            }
+          })
           .attr('y', barY)
           .attr('height', thisBarHeight)
+
         bar.exit().remove()
         break
       case "stacked":
@@ -850,6 +878,13 @@ export class Visual implements IVisual {
           .attr('fill', function (d, i) {
 
             return d.Color
+          })
+          .attr('fill-opacity', (d) => {
+            if (this.highlighted) {
+              return d.highlight ? 1 : 0.1
+            } else {
+              return 1
+            }
           })
           .attr('y', barY)
           .attr('height', thisBarHeight)
@@ -912,8 +947,16 @@ export class Visual implements IVisual {
 
             return d.Color
           })
+          .attr('fill-opacity', (d) => {
+            if (this.highlighted) {
+              return d.highlight ? 1 : 0.1
+            } else {
+              return 1
+            }
+          })
           .attr('y', barY)
           .attr('height', thisBarHeight)
+
         bar.exit().remove()
         break
       case "inside":
@@ -999,6 +1042,13 @@ export class Visual implements IVisual {
             .attr('fill', function (d, i) {
 
               return d.Color
+            })
+            .attr('fill-opacity', (d) => {
+              if (this.highlighted) {
+                return d.highlight ? 1 : 0.1
+              } else {
+                return 1
+              }
             })
             .attr('y', barY)
             .attr('height', thisBarHeight)
@@ -1180,7 +1230,7 @@ export class Visual implements IVisual {
           selectionManager.select(element.selectionId).then((ids: ISelectionId[]) => {
 
             if (ids.length > 0) {
-              this.svgGroupMain.selectAll('.bar').style('fill-opacity', 0.4)
+              this.svgGroupMain.selectAll('.bar').style('fill-opacity', 0.1)
               d3.select(`.selector_${element.Category.replace(/\W/g, '')}`).style('fill-opacity', 1)
 
             } else {
@@ -1221,7 +1271,7 @@ export class Visual implements IVisual {
           selectionManager.select(dataPoint.selectionId).then((ids: ISelectionId[]) => {
             if (ids.length > 0) {
 
-              this.svgGroupMain.selectAll('.bar').style('fill-opacity', 0.4)
+              this.svgGroupMain.selectAll('.bar').style('fill-opacity', 0.1)
               d3.select(<Element>eventTarget).style('fill-opacity', 1)
             } else {
               this.svgGroupMain.selectAll('.bar').style('fill-opacity', 1)
