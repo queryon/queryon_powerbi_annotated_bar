@@ -11,27 +11,22 @@ import ISelectionManager = powerbi.extensibility.ISelectionManager
 import EnumerateVisualObjectInstancesOptions = powerbi.EnumerateVisualObjectInstancesOptions;
 import VisualObjectInstance = powerbi.VisualObjectInstance;
 import ISelectionIdBuilder = powerbi.visuals.ISelectionIdBuilder;
-import DataView = powerbi.DataView;
+// import DataView = powerbi.DataView;
 import ISelectionId = powerbi.visuals.ISelectionId;
-import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
-import PrimitiveValue = powerbi.PrimitiveValue;
+// import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
+// import PrimitiveValue = powerbi.PrimitiveValue;
 import Fill = powerbi.Fill;
 import * as d3 from "d3";
 import * as svgAnnotations from "d3-svg-annotation";
-import IColorPalette = powerbi.extensibility.IColorPalette;
 
 import {
   valueFormatter as vf,
 } from "powerbi-visuals-utils-formattingutils";
 
-import DataViewCategorical = powerbi.DataViewCategorical;
-import DataViewCategoricalColumn = powerbi.DataViewCategoricalColumn;
 import DataViewObjects = powerbi.DataViewObject;
 import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
 
-// import { VisualSettings, dataPointSettings, AxisSettings, BarSettings } from "./settings";
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
-import { text, thresholdSturges, image, stack } from "d3";
 
 //Global settings to the visual
 interface AnnotatedBarSettings {
@@ -680,7 +675,6 @@ export class Visual implements IVisual {
       graphElement["dx"] = 0
       graphElement["highlight"] = element.highlight
       graphElement["stackedBarX"] = stackedBarX
-      // console.log(graphElement["annotationText"])
 
       graphElements.push(graphElement)
       let textHeight = this.getTextHeight(graphElement["annotationText"], annotationSize, annotationFont)
@@ -1050,10 +1044,14 @@ export class Visual implements IVisual {
 
     let annotationElements
     if (this.viewModel.settings.annotationSettings.overlapStyle === "stacked") {
-      annotationElements = graphElements.concat()
+      // annotationElements = graphElements.concat()
       // .sort((a, b) => (a.value > b.value) ? 1 : -1)
+      let positive = graphElements.filter(el => el.Value >= 0)
+      let negative = graphElements.filter(el => el.Value < 0)
+      negative.sort((a, b) => a.Value > b.Value ? 1 : -1)
+      annotationElements = positive.concat(negative)
     } else if (this.viewModel.settings.annotationSettings.overlapStyle === "edge") {
-      annotationElements = graphElements.reverse()
+      annotationElements = graphElements.concat().reverse()
 
     } else {
       annotationElements = graphElements.concat()
@@ -1078,8 +1076,6 @@ export class Visual implements IVisual {
             let index = barElements.indexOf(element)
 
             element.y = marginTop + thisBarHeight * index
-            // console.log(element.y)
-            // element.dy = -20
             element.dy = - (thisBarHeight * (index)) - 20
           }
           else {
@@ -1093,9 +1089,6 @@ export class Visual implements IVisual {
           element.dy = element.Top ? -20 : this.viewModel.settings.axisSettings.axis === "None" ? 20 : 40;
 
         }
-        // element.dx = element.Value == d3.max(graphElements, function (d) { return d.Value; }) ? -0.1 : 0;
-
-        // element.x = this.padding + scale(element.Value);
         if (!element.y) {
           element.y = element.Top ? marginTop : marginTop + this.viewModel.settings.annotationSettings.barHeight;
         }
@@ -1103,34 +1096,12 @@ export class Visual implements IVisual {
       }
 
       else {
-        // element.y = element.Top ? marginTopStagger : marginTopStagger + this.viewModel.settings.barSettings.barHeight;
-
-
-        // if (this.viewModel.settings.annotationSettings.editMode) {
-        //   element.x = element.x ? element.x : this.padding + scale(element.Value);
-        //   element.y = element.y ? element.y : element.Top ? marginTopStagger : marginTopStagger + this.viewModel.settings.barSettings.barHeight;
-
-        //   element.dy = element.dy ? element.dy : element.Top ? this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) : this.viewModel.settings.axisSettings.axis === "None" ? this.viewModel.settings.annotationSettings.spacing * countBottom : this.viewModel.settings.annotationSettings.spacing * countBottom + 20;
-        //   element.dx = element.dx ? element.dx : element.Value == d3.max(graphElements, function (d) { return d.Value; }) ? -0.1 : 0;
-        // }
-
-        // else {
-        // element.x = false;
-        // element.y = false;
-        // element.dx = false;
-        // element.dy = false;
-        // this.persistCoord(element)
-
-        // element.x = this.padding + scale(element.Value);
-
         if (this.viewModel.settings.annotationSettings.overlapStyle === 'edge' && element.Top) {
           if (element.ShowInBar) {
 
             let index = barElements.indexOf(element)
 
             element.y = marginTopStagger + thisBarHeight * index
-            // console.log(element.y)
-            // element.dy = -20
             element.dy = - (thisBarHeight * (index))
             element.dy += this.viewModel.settings.annotationSettings.spacing * (-1 * countTop)
           }
@@ -1148,13 +1119,8 @@ export class Visual implements IVisual {
         if (!element.dy) {
           element.dy = element.Top ? this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) : this.viewModel.settings.axisSettings.axis === "None" ? this.viewModel.settings.annotationSettings.spacing * countBottom : this.viewModel.settings.annotationSettings.spacing * countBottom + 20;
         }
-        // element.dx = element.Value == d3.max(graphElements, function (d) { return d.Value; }) ? -0.1 : 0;
       }
-      // }      
-      // if (this.viewModel.settings.annotationSettings.overlapStyle === 'edge') {
-      //   element.y = element.Top ? element.y + this.viewModel.settings.annotationSettings.barHeight : element.y
-      //   element.dy = element.Top ? element.dy - this.viewModel.settings.annotationSettings.barHeight : element.dy
-      // }
+
 
       annotationsData = [{
         note: {
@@ -1253,38 +1219,6 @@ export class Visual implements IVisual {
     })
 
   }
-
-  // private persistCoord(el) {
-
-  //   const id = el.selectionId ? el.selectionId : el.id; //if SVG element, use selectionId, if annotation, use ID.
-  //   console.log("dx", el.dx, "dy", el.dy)
-  //   const propertiesToBePersisted: VisualObjectInstance = {
-  //     objectName: "manualPosition",
-  //     properties: {
-  //       dx: el.dx,
-  //       dy: el.dy,
-  //       x: el.x,
-  //       y: el.y
-  //     },
-  //     selector: id.getSelector() //selector is necessary for finding correct dataPoint
-  //   };
-
-  //test below works fine and no delay.
-  // const propertiesToBePersistedTest: VisualObjectInstance = {
-  //   objectName: "axisSettings",
-  //   properties: {
-  //     axis: "Percentage"
-  //   },
-  //   selector: null //global setting no selector
-  // };
-
-
-  //   this.host.persistProperties({
-  //     merge: [
-  //       propertiesToBePersisted
-  //     ]
-  //   });
-  // }
 
   private getTextWidth(textString: string, fontSize: number, fontFamily: string) {
     let textData = [textString]
