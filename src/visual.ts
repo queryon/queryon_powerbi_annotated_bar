@@ -377,7 +377,7 @@ export class Visual implements IVisual {
     //Push custom attributes to property pane, as well as dynamic names.
     let objectName = options.objectName;
     let objectEnumeration: VisualObjectInstance[] = [];
-
+    let dataPoints = this.viewModel.dataPoints.concat()
 
     switch (objectName) {
       case 'annotationSettings':
@@ -458,7 +458,7 @@ export class Visual implements IVisual {
         // }
 
 
-        for (let barDataPoint of this.viewModel.dataPoints.sort((a, b) => (a.value > b.value) ? 1 : -1)) {
+        for (let barDataPoint of dataPoints.sort((a, b) => (a.value > b.value) ? 1 : -1)) {
           objectEnumeration.push({
             objectName: objectName,
             displayName: barDataPoint.displayName + " custom format",
@@ -576,7 +576,7 @@ export class Visual implements IVisual {
 
         break
       case 'barColorSelector':
-        for (let barDataPoint of this.viewModel.dataPoints.sort((a, b) => (a.value > b.value) ? 1 : -1)) {
+        for (let barDataPoint of dataPoints.sort((a, b) => (a.value > b.value) ? 1 : -1)) {
           objectEnumeration.push({
             objectName: objectName,
             displayName: "Display " + barDataPoint.displayName + " in bar",
@@ -629,6 +629,9 @@ export class Visual implements IVisual {
     let graphElements = []
 
     this.viewModel.dataPoints.sort((a, b) => (a.value > b.value) ? 1 : -1).forEach((element, i) => {
+
+
+      // this.viewModel.dataPoints.forEach((element, i) => {
       let graphElement = {}
       let barValue = 0
       let value = element.value
@@ -761,7 +764,11 @@ export class Visual implements IVisual {
 
     this.width = options.viewport.width;
     this.height = options.viewport.height;
-    graphElements = graphElements.sort((x, y) => { return y.Value - x.Value })
+
+    if (this.viewModel.settings.annotationSettings.overlapStyle !== "edge") {
+
+      graphElements = graphElements.sort((x, y) => { return y.Value - x.Value })
+    }
 
 
     //sets an empty canva
@@ -821,7 +828,7 @@ export class Visual implements IVisual {
 
     //bar settings
     let barY, thisBarHeight,
-      barElements = graphElements.filter(element => element.ShowInBar === true),
+      barElements = graphElements.concat().filter(element => element.ShowInBar === true),
       firstBarY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop,
       bar
 
@@ -910,7 +917,7 @@ export class Visual implements IVisual {
         bar.exit().remove()
         break
       case "edge":
-        barElements = barElements.reverse()
+        // barElements = barElements.reverse()
         thisBarHeight = this.viewModel.settings.annotationSettings.barHeight / barElements.length
         // let countBottomBar = 0;
         // let countTopBar = barElements.filter(el => el.Top).length;
@@ -1041,11 +1048,19 @@ export class Visual implements IVisual {
       alignment
     )
 
+    let annotationElements
+    if (this.viewModel.settings.annotationSettings.overlapStyle === "stacked") {
+      annotationElements = graphElements.concat()
+      // .sort((a, b) => (a.value > b.value) ? 1 : -1)
+    } else if (this.viewModel.settings.annotationSettings.overlapStyle === "edge") {
+      annotationElements = graphElements.reverse()
 
-
+    } else {
+      annotationElements = graphElements.concat()
+    }
 
     // handle annotations positioning
-    graphElements.forEach((element, i) => {
+    annotationElements.forEach((element, i) => {
       // element.x = this.padding + scale(element.Value);
       element.x = !element.x ? this.padding + scale(element.Value) : this.padding + scale(element.x)
 
