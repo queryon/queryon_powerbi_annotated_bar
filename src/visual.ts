@@ -628,12 +628,13 @@ export class Visual implements IVisual {
       marginTopStagger = 20
     let graphElements = []
 
-    this.viewModel.dataPoints.forEach((element, i) => {
+    this.viewModel.dataPoints.sort((a, b) => (a.value > b.value) ? 1 : -1).forEach((element, i) => {
       let graphElement = {}
       let barValue = 0
       let value = element.value
       let stackedBarX
       if (this.viewModel.settings.annotationSettings.overlapStyle === 'stacked') {
+
         for (let j = i; j >= 0; j--) {
           const previousElement = this.viewModel.dataPoints[j];
           if (element.value >= 0 && previousElement.value >= 0) {
