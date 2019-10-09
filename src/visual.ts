@@ -749,7 +749,12 @@ export class Visual implements IVisual {
     }
 
     graphElements = graphElements.filter(element => {
-      return element.Value >= this.minScale && element.Value <= this.maxScale
+      if (this.viewModel.settings.annotationSettings.overlapStyle !== "stacked") {
+        return element.Value >= this.minScale && element.Value <= this.maxScale
+      } else {
+        let value = element.Value > 0 ? element.Value + element.stackedBarX : element.Value
+        return value >= this.minScale && value <= this.maxScale
+      }
     })
 
     marginTopStagger += (graphElements.filter(element => element.Top).length * this.viewModel.settings.annotationSettings.spacing)
