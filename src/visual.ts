@@ -861,7 +861,7 @@ export class Visual implements IVisual {
           })
           .attr('fill-opacity', (d) => {
             if (this.highlighted) {
-              return d.highlight ? 1 : 0.4
+              return d.highlight ? 1 : 0.1
             } else {
               return 1
             }
@@ -903,7 +903,7 @@ export class Visual implements IVisual {
           })
           .attr('fill-opacity', (d) => {
             if (this.highlighted) {
-              return d.highlight ? 1 : 0.4
+              return d.highlight ? 1 : 0.1
             } else {
               return 1
             }
@@ -948,7 +948,7 @@ export class Visual implements IVisual {
           })
           .attr('fill-opacity', (d) => {
             if (this.highlighted) {
-              return d.highlight ? 1 : 0.4
+              return d.highlight ? 1 : 0.1
             } else {
               return 1
             }
@@ -1014,7 +1014,7 @@ export class Visual implements IVisual {
             })
             .attr('fill-opacity', (d) => {
               if (this.highlighted) {
-                return d.highlight ? 1 : 0.4
+                return d.highlight ? 1 : 0.1
               } else {
                 return 1
               }
@@ -1153,25 +1153,39 @@ export class Visual implements IVisual {
 
       this.svgGroupMain
         .append("g")
-        .attr('class', 'annotations')
+        // .attr('class', 'annotations')
+        .attr('class', `annotation_selector_${element.Category.replace(/\W/g, '')} annotationSelector`)
+        .style('stroke', 'transparent')
         .style('font-size', element.AnnotationSize)
         .style('font-family', element.AnnotationFont)
         .style('background-color', 'transparent')
+        .style('text-decoration', () => {
+          if (this.highlighted) {
+            return element.highlight ? "none" : "line-through";
+          } else {
+            return "none"
+          }
+        })
         .call(makeAnnotations)
         .on('click', el => {
           selectionManager.select(element.selectionId).then((ids: ISelectionId[]) => {
-
             if (ids.length > 0) {
-              this.svgGroupMain.selectAll('.bar').style('fill-opacity', 0.4)
+              this.svgGroupMain.selectAll('.bar').style('fill-opacity', 0.1)
               d3.select(`.selector_${element.Category.replace(/\W/g, '')}`).style('fill-opacity', 1)
+              this.svgGroupMain.selectAll('.annotationSelector').style('text-decoration', "line-through")
+              d3.selectAll(`.annotation_selector_${element.Category.replace(/\W/g, '')}`).style('text-decoration', "none")
+
 
             } else {
               this.svgGroupMain.selectAll('.bar').style('fill-opacity', 1)
+              this.svgGroupMain.selectAll('.annotationSelector').style('text-decoration', "none")
 
             }
 
           })
         })
+
+
 
       if (element.Top) {
         countTop--;
@@ -1195,25 +1209,31 @@ export class Visual implements IVisual {
 
       //handle filter and transparency
       this.svg.on('click', () => {
+
         const mouseEvent: MouseEvent = d3.event as MouseEvent;
         const eventTarget: EventTarget = mouseEvent.target;
         let dataPoint: any = d3.select(<Element>eventTarget).datum();
-
         if (dataPoint) {
           selectionManager.select(dataPoint.selectionId).then((ids: ISelectionId[]) => {
             if (ids.length > 0) {
 
-              this.svgGroupMain.selectAll('.bar').style('fill-opacity', 0.4)
+              this.svgGroupMain.selectAll('.bar').style('fill-opacity', 0.1)
               d3.select(<Element>eventTarget).style('fill-opacity', 1)
+
+              this.svgGroupMain.selectAll('.annotationSelector').style('text-decoration', "line-through")
+              d3.select(`.annotation_selector_${dataPoint.Category.replace(/\W/g, '')}`).style('text-decoration', "none")
+
             } else {
               this.svgGroupMain.selectAll('.bar').style('fill-opacity', 1)
-
+              this.svgGroupMain.selectAll('.annotationSelector').style('text-decoration', "none")
             }
           })
         } else {
           selectionManager.clear().then(() => {
 
             this.svgGroupMain.selectAll('.bar').style('fill-opacity', 1)
+            this.svgGroupMain.selectAll('.annotationSelector').style('text-decoration', "none")
+
           })
         }
 
