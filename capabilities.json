@@ -80,9 +80,17 @@
                     }
                 },
                 "top": {
-                    "displayName": "Text on top",
+                    "displayName": "Text position",
                     "type": {
-                        "bool": true
+                        "enumeration": [{
+                                "displayName": "Top",
+                                "value": "top"
+                            },
+                            {
+                                "displayName": "Bottom",
+                                "value": "bottom"
+                            }
+                        ]
                     }
                 },
                 "labelOrientation": {

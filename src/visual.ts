@@ -76,7 +76,7 @@ interface AnnotatedBarDataPoint {
   dy: any
   x: any
   y: any
-  top: boolean
+  top: string
   transformed: any
   customFormat: boolean
   labelOrientation: string
@@ -251,7 +251,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       dy: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dy', false),
       x: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'x', false),
       y: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'y', false),
-      top: getCategoricalObjectValue<boolean>(categorical, i, 'textFormatting', 'top', false),
+      top: getCategoricalObjectValue<string>(categorical, i, 'textFormatting', 'top', "bottom"),
       labelOrientation: getCategoricalObjectValue<string>(categorical, i, 'textFormatting', 'labelOrientation', "Auto"),
       customFormat: getCategoricalObjectValue<boolean>(categorical, i, 'textFormatting', 'customFormat', false),
       transformed: valueFormatter.format(dataPointValue),
@@ -486,7 +486,7 @@ export class Visual implements IVisual {
 
             objectEnumeration.push({
               objectName: objectName,
-              displayName: barDataPoint.displayName + " text on top",
+              displayName: barDataPoint.displayName + " text position",
               properties: {
                 top: barDataPoint.top
               },
@@ -648,6 +648,8 @@ export class Visual implements IVisual {
 
       barValue = !barValue ? element.value : barValue
 
+      let elementTop = element.top === "top" ? true : false;
+
       let displayName = element.displayName
       let annotationColor = !element.customFormat ? this.viewModel.settings.textFormatting.fill : element.LabelColor
       let annotationSize = !element.customFormat ? this.viewModel.settings.textFormatting.fontSize : element.fontSize
@@ -659,7 +661,7 @@ export class Visual implements IVisual {
       graphElement["Color"] = element.barColor
       graphElement["ShowInBar"] = element.ShowInBar
       graphElement["AnnotationColor"] = this.viewModel.settings.annotationSettings.sameAsBarColor && element.ShowInBar ? element.barColor : annotationColor;
-      graphElement["Top"] = !element.customFormat ? this.viewModel.settings.textFormatting.allTextTop : element.top;
+      graphElement["Top"] = !element.customFormat ? this.viewModel.settings.textFormatting.allTextTop : elementTop;
       graphElement["Display"] = element.transformed
       graphElement["selectionId"] = element.selectionId
       graphElement["AnnotationSize"] = annotationSize;
@@ -859,7 +861,7 @@ export class Visual implements IVisual {
           })
           .attr('fill-opacity', (d) => {
             if (this.highlighted) {
-              return d.highlight ? 1 : 0.1
+              return d.highlight ? 1 : 0.4
             } else {
               return 1
             }
@@ -901,7 +903,7 @@ export class Visual implements IVisual {
           })
           .attr('fill-opacity', (d) => {
             if (this.highlighted) {
-              return d.highlight ? 1 : 0.1
+              return d.highlight ? 1 : 0.4
             } else {
               return 1
             }
@@ -946,7 +948,7 @@ export class Visual implements IVisual {
           })
           .attr('fill-opacity', (d) => {
             if (this.highlighted) {
-              return d.highlight ? 1 : 0.1
+              return d.highlight ? 1 : 0.4
             } else {
               return 1
             }
@@ -1012,7 +1014,7 @@ export class Visual implements IVisual {
             })
             .attr('fill-opacity', (d) => {
               if (this.highlighted) {
-                return d.highlight ? 1 : 0.1
+                return d.highlight ? 1 : 0.4
               } else {
                 return 1
               }
@@ -1160,7 +1162,7 @@ export class Visual implements IVisual {
           selectionManager.select(element.selectionId).then((ids: ISelectionId[]) => {
 
             if (ids.length > 0) {
-              this.svgGroupMain.selectAll('.bar').style('fill-opacity', 0.1)
+              this.svgGroupMain.selectAll('.bar').style('fill-opacity', 0.4)
               d3.select(`.selector_${element.Category.replace(/\W/g, '')}`).style('fill-opacity', 1)
 
             } else {
@@ -1201,7 +1203,7 @@ export class Visual implements IVisual {
           selectionManager.select(dataPoint.selectionId).then((ids: ISelectionId[]) => {
             if (ids.length > 0) {
 
-              this.svgGroupMain.selectAll('.bar').style('fill-opacity', 0.1)
+              this.svgGroupMain.selectAll('.bar').style('fill-opacity', 0.4)
               d3.select(<Element>eventTarget).style('fill-opacity', 1)
             } else {
               this.svgGroupMain.selectAll('.bar').style('fill-opacity', 1)
