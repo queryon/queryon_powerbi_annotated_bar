@@ -237,6 +237,10 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
 
     }
 
+    if (isNaN(dataPointValue)) {
+      return viewModel;
+    }
+
     valueFormatter = createFormatter(format, annotatedBarSettings.annotationSettings.precision, annotatedBarSettings.annotationSettings.displayUnits);
 
     let dataPoint = {
@@ -358,7 +362,6 @@ export class Visual implements IVisual {
   private viewModel: AnnotatedBarViewModel;
 
   constructor(options: VisualConstructorOptions) {
-
     this.svg = d3.select(options.element).append('svg');
     this.svgGroupMain = this.svg.append('g');
     this.padding = 15;
@@ -1216,7 +1219,6 @@ export class Visual implements IVisual {
         if (dataPoint) {
           selectionManager.select(dataPoint.selectionId).then((ids: ISelectionId[]) => {
             if (ids.length > 0) {
-
               this.svgGroupMain.selectAll('.bar').style('fill-opacity', 0.1)
               d3.select(<Element>eventTarget).style('fill-opacity', 1)
 
@@ -1229,6 +1231,7 @@ export class Visual implements IVisual {
             }
           })
         } else {
+
           selectionManager.clear().then(() => {
 
             this.svgGroupMain.selectAll('.bar').style('fill-opacity', 1)

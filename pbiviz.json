@@ -15,7 +15,7 @@
         "email": "bd@queryon"
     },
     "assets": {
-        "icon": "assets/icon2.png"
+        "icon": "assets/icon.png"
     },
     "externalJS": null,
     "style": "style/visual.less",
