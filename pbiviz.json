@@ -5,7 +5,7 @@
         "guid": "firstVisual10945130E24B4D6AAD5741C12ECB533D",
         "visualClassName": "Visual",
         "version": "1.0.0",
-        "description": "Annotated bar chart",
+        "description": "Add callouts to important bars, or just read stacked, clustered, or overlapping bar data clearly.",
         "supportUrl": "www.queryon.com",
         "gitHubUrl": ""
     },
