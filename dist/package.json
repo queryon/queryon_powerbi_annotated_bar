@@ -5,10 +5,10 @@
         {
             "resourceId": "rId0",
             "sourceType": 5,
-            "file": "resources/firstVisual10945130E24B4D6AAD5741C12ECB533D.pbiviz.json"
+            "file": "resources/annotatedBar10945130E24B4D6AAD5741C12ECB533D.pbiviz.json"
         }
     ],
-    "visual": {"name":"Annotated Bar","displayName":"Annotated Bar","guid":"firstVisual10945130E24B4D6AAD5741C12ECB533D","visualClassName":"Visual","version":"1.0.0","description":"Annotated bar chart","supportUrl":"www.queryon.com","gitHubUrl":""},
+    "visual": {"name":"Annotated Bar","displayName":"Annotated Bar","guid":"annotatedBar10945130E24B4D6AAD5741C12ECB533D","visualClassName":"Visual","version":"1.0.0","description":"Add callouts to important bars, or just read stacked, clustered, or overlapping bar data clearly.","supportUrl":"www.queryon.com","gitHubUrl":""},
     "metadata": {
         "pbivizjson": {
             "resourceId": "rId0"
