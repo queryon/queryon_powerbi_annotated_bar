@@ -896,13 +896,12 @@ export class Visual implements IVisual {
           .attr('width', d => {
             let min = Math.max(this.minScale, 0)
             return Math.abs(scale(d.Value) - scale(min))
-            // return Math.abs(scale(d.Value))
+
           })
           .attr('class', el => `bar selector_${el.Category.replace(/\W/g, '')}`)
           .attr('x', d => {
-            let min = Math.max(this.minScale, 0)
-            // return this.padding + scale(Math.min(d.Value, min))
             return this.padding + scale(d.stackedBarX)
+
           })
           .attr('fill', function (d, i) {
 
