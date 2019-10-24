@@ -847,15 +847,19 @@ export class Visual implements IVisual {
           // .attr('class', 'bar')
           .attr('width', d => {
             // let min = Math.max(this.minScale, 0)
-            let min = 0
+            let min
+            if (this.maxScale >= 0) {
+              min = Math.max(this.minScale, 0)
+            } else {
+              min = Math.min(this.maxScale, 0)
+            }
             return Math.abs(scale(d.Value) - scale(min))
           })
           .attr('class', el => `bar selector_${el.Category.replace(/\W/g, '')}`)
           .attr('x', d => {
 
             // let min = Math.max(this.minScale, 0)
-
-            let min = 0
+            let min = Math.max(this.minScale, 0)
             return this.padding + scale(Math.min(d.Value, min))
             // return scale(20000)
           })
@@ -934,7 +938,14 @@ export class Visual implements IVisual {
           .merge(bar)
           // .attr('class', 'bar')
           .attr('width', d => {
-            let min = Math.max(this.minScale, 0)
+            // let min = Math.max(this.minScale, 0)
+            // return Math.abs(scale(d.Value) - scale(min))
+            let min
+            if (this.maxScale >= 0) {
+              min = Math.max(this.minScale, 0)
+            } else {
+              min = Math.min(this.maxScale, 0)
+            }
             return Math.abs(scale(d.Value) - scale(min))
           })
           .attr('class', el => `bar selector_${el.Category.replace(/\W/g, '')}`)
@@ -1005,7 +1016,14 @@ export class Visual implements IVisual {
               // return scale(20000)
             })
             .attr('width', d => {
-              let min = Math.max(this.minScale, 0)
+              // let min = Math.max(this.minScale, 0)
+              // return Math.abs(scale(d.Value) - scale(min))
+              let min
+              if (this.maxScale >= 0) {
+                min = Math.max(this.minScale, 0)
+              } else {
+                min = Math.min(this.maxScale, 0)
+              }
               return Math.abs(scale(d.Value) - scale(min))
             })
             // .attr('class', `selector_${bars[i].Category}`)
