@@ -550,27 +550,29 @@ export class Visual implements IVisual {
           });
         }
 
-        objectEnumeration.push({
-          objectName: objectName,
-          properties: {
-            manualScale: this.viewModel.settings.axisSettings.manualScale,
-          },
-          selector: null
-        });
+        if (this.viewModel.settings.annotationSettings.overlapStyle !== "stacked") {
 
-
-        if (this.viewModel.settings.axisSettings.manualScale) {
           objectEnumeration.push({
             objectName: objectName,
             properties: {
-              barMin: this.viewModel.settings.axisSettings.barMin,
-              barMax: this.viewModel.settings.axisSettings.barMax,
+              manualScale: this.viewModel.settings.axisSettings.manualScale,
             },
             selector: null
           });
 
-        }
 
+          if (this.viewModel.settings.axisSettings.manualScale) {
+            objectEnumeration.push({
+              objectName: objectName,
+              properties: {
+                barMin: this.viewModel.settings.axisSettings.barMin,
+                barMax: this.viewModel.settings.axisSettings.barMax,
+              },
+              selector: null
+            });
+
+          }
+        }
 
         break
       case 'barColorSelector':
@@ -726,17 +728,16 @@ export class Visual implements IVisual {
       conditionalMinimum = d3.min(graphElements, function (d) { return d.Value }) > 0 ? 0 : d3.min(graphElements, function (d) { return d.Value })
       conditionalMax = d3.max(graphElements, function (d) { return d.Value })
     }
+
     //handles auto and manual scale
-    if (!this.viewModel.settings.axisSettings.manualScale) {
+    if (!this.viewModel.settings.axisSettings.manualScale || this.viewModel.settings.annotationSettings.overlapStyle === "stacked") {
       this.minScale = conditionalMinimum
       this.maxScale = conditionalMax
       this.viewModel.settings.axisSettings.barMin = false;
       this.viewModel.settings.axisSettings.barMax = false;
 
     } else {
-      // this.minScale = this.viewModel.settings.axisSettings.barMin === false ? d3.min(graphElements, function (d) { return d.Value }) : d3.min(graphElements, function (d) { return d.Value }) < this.viewModel.settings.axisSettings.barMin ? d3.min(graphElements, function (d) { return d.Value }) : this.viewModel.settings.axisSettings.barMin;
       this.maxScale = this.viewModel.settings.axisSettings.barMax === false ? conditionalMax : this.viewModel.settings.axisSettings.barMax;
-
       this.minScale = this.viewModel.settings.axisSettings.barMin === false ? conditionalMinimum : this.viewModel.settings.axisSettings.barMin;
 
     }
