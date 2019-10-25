@@ -716,13 +716,14 @@ export class Visual implements IVisual {
 
     let conditionalMinimum, conditionalMax
     if (this.viewModel.settings.annotationSettings.overlapStyle === 'stacked') {
-      conditionalMinimum = graphElements.filter(el => el.Value < 0).reduce(function (a, b) {
+      conditionalMinimum = Math.ceil(graphElements.filter(el => el.Value < 0).reduce(function (a, b) {
         return a + b.Value;
-      }, 0);
+      }, 0));
 
-      conditionalMax = graphElements.filter(el => el.Value >= 0).reduce(function (a, b) {
+
+      conditionalMax = Math.ceil(graphElements.filter(el => el.Value >= 0).reduce(function (a, b) {
         return a + b.Value;
-      }, 0);
+      }, 0));
 
     } else {
       conditionalMinimum = d3.min(graphElements, function (d) { return d.Value }) > 0 ? 0 : d3.min(graphElements, function (d) { return d.Value })
@@ -753,6 +754,7 @@ export class Visual implements IVisual {
 
     graphElements = graphElements.filter(element => {
       if (this.viewModel.settings.annotationSettings.overlapStyle !== "stacked") {
+
         return element.Value >= this.minScale && element.Value <= this.maxScale
       } else {
         let value = element.Value > 0 ? element.Value + element.stackedBarX : element.Value
