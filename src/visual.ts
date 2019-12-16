@@ -256,8 +256,6 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       selectionId = host.createSelectionIdBuilder()     //generates IDs for svg elements based on queryName
         .withCategory(category, i)
         .createSelectionId()
-
-        console.log("categorical: ", colName, colVal)
     }
 
     if (isNaN(dataPointValue)) {
@@ -1267,34 +1265,20 @@ export class Visual implements IVisual {
       const eventTarget: EventTarget = mouseEvent.target;
       let args = []
           let dataPoint: any = d3.select(<Element>eventTarget).datum();
-        if(dataPoint){
+        if(dataPoint && dataPoint.Category){
           if (categorical.categories){
             args = [{
-              //displayName: dataPoint.Category,
               displayName: dataPoint.colName,
-              value: dataPoint.Category,
-              //value:dataPoint.Display,
-           //   color: dataPoint.Color
-            
-          }, 
-          {
-           //displayName: dataPoint.Category,
-           displayName: dataPoint.colVal,
-           value: dataPoint.Display,
-           //value:dataPoint.Display,
-          // color: dataPoint.Color
-         
-       }
-         
-         ]
+              value: dataPoint.Category
+              }, 
+              {
+              displayName: dataPoint.colVal,
+              value: dataPoint.Display
+              }]
           } else {
-    
             args =   [{
               displayName: dataPoint.Category,
-             
-              value:dataPoint.Display,
-             color: dataPoint.Color
-            
+              value:dataPoint.Display
           }]
           }
      
@@ -1303,8 +1287,6 @@ export class Visual implements IVisual {
         (tooltipEvent: TooltipEventArgs<number>) => null);
  
         }
-          
-          console.log("hover", mouseEvent, eventTarget, dataPoint)
 
         })
         
