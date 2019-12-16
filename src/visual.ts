@@ -8,6 +8,10 @@ import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructor
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import IVisual = powerbi.extensibility.visual.IVisual;
 import ISelectionManager = powerbi.extensibility.ISelectionManager
+// tooltips
+import ITooltipService = powerbi.extensibility.ITooltipService;
+import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem; 
+
 import EnumerateVisualObjectInstancesOptions = powerbi.EnumerateVisualObjectInstancesOptions;
 import VisualObjectInstance = powerbi.VisualObjectInstance;
 import ISelectionIdBuilder = powerbi.visuals.ISelectionIdBuilder;
@@ -22,7 +26,12 @@ import * as svgAnnotations from "d3-svg-annotation";
 import {
   valueFormatter as vf,
 } from "powerbi-visuals-utils-formattingutils";
-
+import {
+  TooltipEventArgs,
+  TooltipEnabledDataPoint,
+  createTooltipServiceWrapper,
+  ITooltipServiceWrapper,
+} from 'powerbi-visuals-utils-tooltiputils'
 import DataViewObjects = powerbi.DataViewObject;
 import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
 
@@ -64,6 +73,8 @@ interface AnnotatedBarSettings {
 
 //Individual values and settings from specific data point
 interface AnnotatedBarDataPoint {
+  colName: string;
+  colVal: string;
   value: any;
   displayName: string;
   barColor: string;
@@ -217,7 +228,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
     }
 
 
-    let format, valueFormatter, dataPointValue, displayName, selectionId
+    let format, valueFormatter, dataPointValue, displayName, selectionId, colName, colVal
 
     if (!categorical.categories) {
       format = options.dataViews[0].categorical.values[i].source.format;
@@ -227,7 +238,18 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
           .withMeasure(dataValues[i].source.queryName)
           .createSelectionId()
 
+      colName = displayName
+      colVal = false
+
     } else {
+      if(options.dataViews[0].metadata.columns[0].roles.category){
+
+        colName = options.dataViews[0].metadata.columns[0].displayName
+        colVal = options.dataViews[0].metadata.columns[1].displayName
+      } else {
+        colName = options.dataViews[0].metadata.columns[1].displayName
+        colVal = options.dataViews[0].metadata.columns[0].displayName 
+      }
       format = options.dataViews[0].categorical.values[0].source.format;
       dataPointValue = categorical.values[0].values[i]
       displayName = categorical.categories[0].values[i].toString()
@@ -235,6 +257,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
         .withCategory(category, i)
         .createSelectionId()
 
+        console.log("categorical: ", colName, colVal)
     }
 
     if (isNaN(dataPointValue)) {
@@ -244,6 +267,8 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
     valueFormatter = createFormatter(format, annotatedBarSettings.annotationSettings.precision, annotatedBarSettings.annotationSettings.displayUnits);
 
     let dataPoint = {
+      colName: colName,
+      colVal: colVal,
       value: dataPointValue,
       displayName: displayName,
       barColor: getCategoricalObjectValue<Fill>(categorical, i, 'barColorSelector', 'fill', defaultBarColor).solid.color,
@@ -360,6 +385,7 @@ export class Visual implements IVisual {
   private selectionIdBuilder: ISelectionIdBuilder;
   private annotatedBarSettings: AnnotatedBarSettings;
   private viewModel: AnnotatedBarViewModel;
+  private tooltipServiceWrapper: ITooltipServiceWrapper;
 
   constructor(options: VisualConstructorOptions) {
     this.svg = d3.select(options.element).append('svg');
@@ -369,6 +395,9 @@ export class Visual implements IVisual {
     this.selectionIdBuilder = this.host.createSelectionIdBuilder();
     this.selectionManager = this.host.createSelectionManager();
     this.highlighted = false;
+    this.tooltipServiceWrapper = createTooltipServiceWrapper(
+      options.host.tooltipService,
+      options.element);
   }
 
   public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
@@ -613,8 +642,7 @@ export class Visual implements IVisual {
 
   public update(options) {
     this.viewModel = visualTransform(options, this.host);
-
-
+    
     let categorical = options.dataViews[0].categorical;
     if (categorical.categories && categorical.values[0].highlights) {
       this.highlighted = true
@@ -668,6 +696,8 @@ export class Visual implements IVisual {
       graphElement["AnnotationColor"] = this.viewModel.settings.annotationSettings.sameAsBarColor && element.ShowInBar ? element.barColor : annotationColor;
       graphElement["Top"] = !element.customFormat ? this.viewModel.settings.textFormatting.allTextTop : elementTop;
       graphElement["Display"] = element.transformed
+      graphElement["colName"] = element.colName
+      graphElement["colVal"] = element.colVal? element.colVal : element.transformed
       graphElement["selectionId"] = element.selectionId
       graphElement["AnnotationSize"] = annotationSize;
       graphElement["AnnotationFont"] = annotationFont;
@@ -878,7 +908,6 @@ export class Visual implements IVisual {
           })
           .attr('y', barY)
           .attr('height', thisBarHeight)
-
         bar.exit().remove()
         break
       case "stacked":
@@ -1190,7 +1219,7 @@ export class Visual implements IVisual {
           }
         })
         .call(makeAnnotations)
-        .on('click', el => {
+       .on('click', el => {
           selectionManager.select(element.selectionId).then((ids: ISelectionId[]) => {
             if (ids.length > 0) {
               this.svgGroupMain.selectAll('.bar').style('fill-opacity', 0.1)
@@ -1230,6 +1259,55 @@ export class Visual implements IVisual {
         mouseEvent.preventDefault();
       });
 
+      //tooltips
+
+      this.svg.on('mouseover', el => {
+        
+      const mouseEvent: MouseEvent = d3.event as MouseEvent;
+      const eventTarget: EventTarget = mouseEvent.target;
+      let args = []
+          let dataPoint: any = d3.select(<Element>eventTarget).datum();
+        if(dataPoint){
+          if (categorical.categories){
+            args = [{
+              //displayName: dataPoint.Category,
+              displayName: dataPoint.colName,
+              value: dataPoint.Category,
+              //value:dataPoint.Display,
+           //   color: dataPoint.Color
+            
+          }, 
+          {
+           //displayName: dataPoint.Category,
+           displayName: dataPoint.colVal,
+           value: dataPoint.Display,
+           //value:dataPoint.Display,
+          // color: dataPoint.Color
+         
+       }
+         
+         ]
+          } else {
+    
+            args =   [{
+              displayName: dataPoint.Category,
+             
+              value:dataPoint.Display,
+             color: dataPoint.Color
+            
+          }]
+          }
+     
+          this.tooltipServiceWrapper.addTooltip(d3.select(<Element>eventTarget),
+          (tooltipEvent: TooltipEventArgs<number>) => args,
+        (tooltipEvent: TooltipEventArgs<number>) => null);
+ 
+        }
+          
+          console.log("hover", mouseEvent, eventTarget, dataPoint)
+
+        })
+        
       //handle filter and transparency
       this.svg.on('click', () => {
 
