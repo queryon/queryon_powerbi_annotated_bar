@@ -1206,7 +1206,7 @@ export class Visual implements IVisual {
         // .attr('class', 'annotations')
         .attr('class', `annotation_selector_${element.Category.replace(/\W/g, '')} annotationSelector`)
         .style('stroke', 'transparent')
-        .style('font-size', element.AnnotationSize)
+        .style('font-size', element.AnnotationSize + "px")
         .style('font-family', element.AnnotationFont)
         .style('background-color', 'transparent')
         .style('text-decoration', () => {
@@ -1339,12 +1339,23 @@ export class Visual implements IVisual {
       .attr("font-family", fontFamily)
       .attr("font-size", fontSize)
       .text(function (d) { return d })
-      .each(function (d, i) {
-        let thisWidth = this.getComputedTextLength()
+      // .each(function (d, i) {
+      //   let thisWidth = this.getComputedTextLength()
+      //   textWidth = thisWidth
+      //   this.remove() // remove them just after displaying them
+      // })
+      .attr("color", function(d){
+        //Irrelevant color. ".EACH" does not work on IE and we need to iterate over the elements after they have been appended to dom.
+        let thisWidth = this.getBBox().width
         textWidth = thisWidth
-        this.remove() // remove them just after displaying them
-      })
-
+        // this.remove()
+        if (this.parentNode) {
+            this.parentNode.removeChild(this);
+        }
+           
+        
+        return "white"
+    })
     return textWidth
   }
 
@@ -1362,11 +1373,23 @@ export class Visual implements IVisual {
       .attr("font-family", fontFamily)
       .attr("font-size", fontSize)
       .text(function (d) { return d })
-      .each(function (d, i) {
+      // .each(function (d, i) {
+      //   let thisHeight = this.getBBox().height
+      //   textHeight = thisHeight
+      //   this.remove() // remove them just after displaying them
+      // })
+      .attr("color", function(d){
+        //Irrelevant color. ".EACH" does not work on IE and we need to iterate over the elements after they have been appended to dom.
         let thisHeight = this.getBBox().height
         textHeight = thisHeight
-        this.remove() // remove them just after displaying them
-      })
+        // this.remove()
+        if (this.parentNode) {
+            this.parentNode.removeChild(this);
+        }
+           
+        
+        return "white"
+    })
 
     return textHeight
   }
