@@ -4,7 +4,7 @@
         "displayName": "Annotated Bar",
         "guid": "annotatedBarByQueryOn10945130E24B4D6AAD5741C12ECB533D",
         "visualClassName": "Visual",
-        "version": "1.0.1",
+        "version": "1.0.2",
         "description": "Add callouts to important bars, or just read stacked, clustered, or overlapping bar data clearly.",
         "supportUrl": "https://queryon.com/pbiviz/annotated-bar",
         "gitHubUrl": ""

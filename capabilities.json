@@ -1,4 +1,9 @@
 {
+    "sorting": { 
+      "default":{
+          
+      }
+    },
     "dataRoles": [{
             "displayName": "Measure Data",
             "name": "measure",

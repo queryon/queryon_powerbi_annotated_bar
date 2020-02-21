@@ -483,7 +483,7 @@ export class Visual implements IVisual {
         // }
 
 
-        for (let barDataPoint of dataPoints.sort((a, b) => (a.value > b.value) ? 1 : -1)) {
+        for (let barDataPoint of dataPoints){//.sort((a, b) => (a.value > b.value) ? 1 : -1)) {
           objectEnumeration.push({
             objectName: objectName,
             displayName: barDataPoint.displayName + " custom format",
@@ -603,7 +603,7 @@ export class Visual implements IVisual {
 
         break
       case 'barColorSelector':
-        for (let barDataPoint of dataPoints.sort((a, b) => (a.value > b.value) ? 1 : -1)) {
+        for (let barDataPoint of dataPoints){//.sort((a, b) => (a.value > b.value) ? 1 : -1)) {
           objectEnumeration.push({
             objectName: objectName,
             displayName: "Display " + barDataPoint.displayName + " in bar",
@@ -654,10 +654,11 @@ export class Visual implements IVisual {
       marginTopStagger = 20
     let graphElements = []
 
-    this.viewModel.dataPoints.sort((a, b) => (a.value > b.value) ? 1 : -1).forEach((element, i) => {
+    // this.viewModel.dataPoints.sort((a, b) => (a.value > b.value) ? 1 : -1).forEach((element, i) => {
 
 
-      // this.viewModel.dataPoints.forEach((element, i) => {
+      this.viewModel.dataPoints.forEach((element, i) => {
+      console.log(element)
       let graphElement = {}
       let barValue = 0
       let value = element.value
@@ -743,6 +744,8 @@ export class Visual implements IVisual {
     // marginTopStagger = marginTopStagger + (graphElements.filter(el => el.top).length * this.viewModel.settings.annotationSettings.spacing)
 
     let conditionalMinimum, conditionalMax
+
+    //Stablish min/max axis with exception on stacked (sum of vals)
     if (this.viewModel.settings.annotationSettings.overlapStyle === 'stacked') {
       conditionalMinimum = Math.ceil(graphElements.filter(el => el.Value < 0).reduce(function (a, b) {
         return a + b.Value;
@@ -780,6 +783,7 @@ export class Visual implements IVisual {
       this.padding = dynamicPadding
     }
 
+    //Filter out elements smaller/bigger than manual axis
     graphElements = graphElements.filter(element => {
       if (this.viewModel.settings.annotationSettings.overlapStyle !== "stacked") {
 
@@ -795,10 +799,10 @@ export class Visual implements IVisual {
     this.width = options.viewport.width;
     this.height = options.viewport.height;
 
-    if (this.viewModel.settings.annotationSettings.overlapStyle !== "edge") {
+    // if (this.viewModel.settings.annotationSettings.overlapStyle !== "edge") {
 
-      graphElements = graphElements.sort((x, y) => { return y.Value - x.Value })
-    }
+    //   graphElements = graphElements.sort((x, y) => { return y.Value - x.Value })
+    // }
 
 
     //sets an empty canva
@@ -865,7 +869,8 @@ export class Visual implements IVisual {
 
     switch (this.viewModel.settings.annotationSettings.overlapStyle) {
       case "full":
-        barElements = barElements.filter(el => el.Value < 0).sort((a, b) => (a.Value > b.Value) ? 1 : -1).concat(barElements.filter(el => el.Value >= 0))
+        barElements = barElements.filter(el => el.Value < 0).concat(barElements.filter(el => el.Value >= 0))
+        //.sort((a, b) => (a.Value > b.Value) ? 1 : -1).concat(barElements.filter(el => el.Value >= 0))
         barY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop
         thisBarHeight = this.viewModel.settings.annotationSettings.barHeight
 
@@ -1100,7 +1105,7 @@ export class Visual implements IVisual {
       // .sort((a, b) => (a.value > b.value) ? 1 : -1)
       let positive = graphElements.filter(el => el.Value >= 0)
       let negative = graphElements.filter(el => el.Value < 0)
-      negative.sort((a, b) => a.Value > b.Value ? 1 : -1)
+      //negative.sort((a, b) => a.Value > b.Value ? 1 : -1)
       annotationElements = positive.concat(negative)
     } else if (this.viewModel.settings.annotationSettings.overlapStyle === "edge") {
       annotationElements = graphElements.concat().reverse()
