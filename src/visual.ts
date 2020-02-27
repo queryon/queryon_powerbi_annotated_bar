@@ -667,6 +667,8 @@ export class Visual implements IVisual {
 
         for (let j = i; j >= 0; j--) {
           const previousElement = this.viewModel.dataPoints[j];
+          console.log(element.value)
+          console.log(previousElement.value)
           if (element.value >= 0 && previousElement.value >= 0) {
             barValue += previousElement.value
           } else if (element.value < 0 && previousElement.value < 0) {
@@ -869,8 +871,14 @@ export class Visual implements IVisual {
 
     switch (this.viewModel.settings.annotationSettings.overlapStyle) {
       case "full":
-        barElements = barElements.filter(el => el.Value < 0).concat(barElements.filter(el => el.Value >= 0))
+        // barElements = barElements.filter(el => el.Value < 0).concat(barElements.filter(el => el.Value >= 0))
         //.sort((a, b) => (a.Value > b.Value) ? 1 : -1).concat(barElements.filter(el => el.Value >= 0))
+        let negative = barElements.concat().filter(el => el.Value < 0)
+        negative = negative.sort((a, b) => (a.Value > b.Value) ? 1 : -1)
+        let positive = barElements.concat().filter(el => el.Value >= 0)
+        positive = positive.sort((a, b) => (a.Value > b.Value) ? -1 : 1)
+        barElements = negative.concat(positive)
+      
         barY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop
         thisBarHeight = this.viewModel.settings.annotationSettings.barHeight
 
