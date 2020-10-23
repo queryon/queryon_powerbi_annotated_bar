@@ -6,6 +6,7 @@ import "./../style/visual.less";
 import powerbi from "powerbi-visuals-api";
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
+import IVisualEventService = powerbi.extensibility.IVisualEventService;
 import IVisual = powerbi.extensibility.visual.IVisual;
 import ISelectionManager = powerbi.extensibility.ISelectionManager
 // tooltips
@@ -385,6 +386,8 @@ export class Visual implements IVisual {
   private viewModel: AnnotatedBarViewModel;
   private tooltipServiceWrapper: ITooltipServiceWrapper;
 
+  private events: IVisualEventService;
+
   constructor(options: VisualConstructorOptions) {
     this.svg = d3.select(options.element).append('svg');
     this.svgGroupMain = this.svg.append('g');
@@ -639,6 +642,8 @@ export class Visual implements IVisual {
 
 
   public update(options) {
+    this.events.renderingStarted(options); // Rendering Events API START
+
     this.viewModel = visualTransform(options, this.host);
     
     let categorical = options.dataViews[0].categorical;
@@ -1336,6 +1341,7 @@ export class Visual implements IVisual {
       });
     })
 
+    this.events.renderingFinished(options); // Rendering Events API FINISH
   }
 
   private getTextWidth(textString: string, fontSize: number, fontFamily: string) {
