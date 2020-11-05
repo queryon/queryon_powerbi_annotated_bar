@@ -50,7 +50,7 @@
 // }
 
 // export class BarSettings {
-//   public barHeight: number = 30;
+//   public barH: number = 30;
 //   public manualScale: boolean = false;
 //   public barMin: any = false;
 //   public barMax: any = false;

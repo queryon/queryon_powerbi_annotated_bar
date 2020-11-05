@@ -274,12 +274,12 @@
                         ]
                     }
                 },
-                "barHeight": {
-                    "displayName": "Bar Height",
-                    "type": {
-                        "numeric": true
-                    }
-                },
+              "barH": {
+                "displayName": "Bar Height",
+                "type": {
+                  "numeric": true
+                }
+              },
                 "sameAsBarColor": {
                     "displayName": "Text color same as bar color",
                     "type": {
