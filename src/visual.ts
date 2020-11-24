@@ -399,6 +399,7 @@ export class Visual implements IVisual {
     this.tooltipServiceWrapper = createTooltipServiceWrapper(
       options.host.tooltipService,
       options.element);
+    this.events = options.host.eventService;
   }
 
   public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
