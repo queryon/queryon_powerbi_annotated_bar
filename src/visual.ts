@@ -46,7 +46,7 @@ interface AnnotatedBarSettings {
     // editMode: boolean,
     separator: string,
     sameAsBarColor: boolean,
-    barHeight: number,
+    barHt: number,
     displayUnits: number,
     precision: any,
     overlapStyle: string,
@@ -120,7 +120,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       sameAsBarColor: false,
       stagger: true,
       spacing: 20,
-      barHeight: 30,
+      barHt: 30,
       displayUnits: 0,
       precision: false,
       overlapStyle: 'full',
@@ -182,7 +182,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       sameAsBarColor: getValue<boolean>(objects, 'annotationSettings', 'sameAsBarColor', defaultSettings.annotationSettings.sameAsBarColor),
       stagger: getValue<boolean>(objects, 'annotationSettings', 'stagger', defaultSettings.annotationSettings.stagger),
       separator: getValue<string>(objects, 'annotationSettings', 'separator', defaultSettings.annotationSettings.separator),
-      barHeight: getValue<number>(objects, 'annotationSettings', 'barHeight', defaultSettings.annotationSettings.barHeight),
+      barHt: getValue<number>(objects, 'annotationSettings', 'barHt', defaultSettings.annotationSettings.barHt),
       // editMode: getValue<boolean>(objects, 'annotationSettings', 'editMode', defaultSettings.annotationSettings.editMode),
       spacing: getValue<any>(objects, 'annotationSettings', 'spacing', defaultSettings.annotationSettings.spacing),
       displayUnits: getValue<number>(objects, 'annotationSettings', 'displayUnits', defaultSettings.annotationSettings.displayUnits),
@@ -415,7 +415,7 @@ export class Visual implements IVisual {
           properties: {
             overlapStyle: this.viewModel.settings.annotationSettings.overlapStyle,
             labelInfo: this.viewModel.settings.annotationSettings.labelInfo,
-            barHeight: this.viewModel.settings.annotationSettings.barHeight,
+            barHt: this.viewModel.settings.annotationSettings.barHt,
             sameAsBarColor: this.viewModel.settings.annotationSettings.sameAsBarColor,
             displayUnits: this.viewModel.settings.annotationSettings.displayUnits,
             precision: this.viewModel.settings.annotationSettings.precision,
@@ -843,7 +843,7 @@ export class Visual implements IVisual {
 
     //Append group and insert axis
     this.svgGroupMain.append("g")
-      .attr("transform", "translate(" + this.padding + "," + ((this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop) + this.viewModel.settings.annotationSettings.barHeight) + ")")
+      .attr("transform", "translate(" + this.padding + "," + ((this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop) + this.viewModel.settings.annotationSettings.barHt) + ")")
       .call(x_axis)
       .attr('class', 'axis')
       .attr('style', `color :${this.viewModel.settings.axisSettings.axisColor.solid.color}`)
@@ -869,7 +869,7 @@ export class Visual implements IVisual {
     //bar settings
 
     //bar settings
-    let barY, thisBarHeight,
+    let barY, thisBarHt,
       barElements = graphElements.concat().filter(element => element.ShowInBar === true),
       firstBarY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop,
       bar
@@ -886,7 +886,7 @@ export class Visual implements IVisual {
         barElements = negative.concat(positive)
       
         barY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop
-        thisBarHeight = this.viewModel.settings.annotationSettings.barHeight
+        thisBarHt = this.viewModel.settings.annotationSettings.barHt
 
         bar = this.svgGroupMain.selectAll('rect')
           .data(barElements)
@@ -924,12 +924,12 @@ export class Visual implements IVisual {
             }
           })
           .attr('y', barY)
-          .attr('height', thisBarHeight)
+          .attr('height', thisBarHt)
         bar.exit().remove()
         break
       case "stacked":
         barY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop
-        thisBarHeight = this.viewModel.settings.annotationSettings.barHeight
+        thisBarHt = this.viewModel.settings.annotationSettings.barHt
 
         //sort negative values for correct overlay
         // barElements = barElements.filter(el => el.Value < 0).sort((a, b) => (a.Value > b.Value) ? 1 : -1).concat(barElements.filter(el => el.Value >= 0))
@@ -964,18 +964,18 @@ export class Visual implements IVisual {
             }
           })
           .attr('y', barY)
-          .attr('height', thisBarHeight)
+          .attr('height', thisBarHt)
         bar.exit().remove()
         break
       case "edge":
         // barElements = barElements.reverse()
-        thisBarHeight = this.viewModel.settings.annotationSettings.barHeight / barElements.length
+        thisBarHt = this.viewModel.settings.annotationSettings.barHt / barElements.length
         // let countBottomBar = 0;
         // let countTopBar = barElements.filter(el => el.Top).length;
         let countBottomBar = 1;
         let countTopBar = 1;
         barY = (d, i) => {
-          return firstBarY + thisBarHeight * i
+          return firstBarY + thisBarHt * i
         }
 
         bar = this.svgGroupMain.selectAll('rect')
@@ -1016,7 +1016,7 @@ export class Visual implements IVisual {
             }
           })
           .attr('y', barY)
-          .attr('height', thisBarHeight)
+          .attr('height', thisBarHt)
 
         bar.exit().remove()
         break
@@ -1025,24 +1025,24 @@ export class Visual implements IVisual {
 
         const MINIMUM_BAR_HEIGHT = 4
         let amount = barElements.length,
-          smallestBar = Math.max(this.viewModel.settings.annotationSettings.barHeight / amount, MINIMUM_BAR_HEIGHT),
-          interval = (this.viewModel.settings.annotationSettings.barHeight - smallestBar) / (amount - 1),
-          totalSpace = this.viewModel.settings.annotationSettings.barHeight
+          smallestBar = Math.max(this.viewModel.settings.annotationSettings.barHt / amount, MINIMUM_BAR_HEIGHT),
+          interval = (this.viewModel.settings.annotationSettings.barHt - smallestBar) / (amount - 1),
+          totalSpace = this.viewModel.settings.annotationSettings.barHt
 
         barElements.forEach((barElement, i) => {
 
           if (i === 0) {
             //if first bar, total height
-            thisBarHeight = this.viewModel.settings.annotationSettings.barHeight
+            thisBarHt = this.viewModel.settings.annotationSettings.barHt
           } else if (i === amount - 1) {
             //if last bar, smallest bar
-            thisBarHeight = smallestBar
+            thisBarHt = smallestBar
           } else {
             totalSpace = totalSpace - interval
-            thisBarHeight = totalSpace
+            thisBarHt = totalSpace
           }
 
-          let finalY = (this.viewModel.settings.annotationSettings.barHeight - thisBarHeight) / 2
+          let finalY = (this.viewModel.settings.annotationSettings.barHt - thisBarHt) / 2
 
           barY = this.viewModel.settings.annotationSettings.stagger ? marginTopStagger + finalY : marginTop + finalY
 
@@ -1089,7 +1089,7 @@ export class Visual implements IVisual {
               }
             })
             .attr('y', barY)
-            .attr('height', thisBarHeight)
+            .attr('height', thisBarHt)
 
           bars[i].exit().remove()
 
@@ -1146,12 +1146,12 @@ export class Visual implements IVisual {
 
             let index = barElements.indexOf(element)
 
-            element.y = marginTop + thisBarHeight * index
-            element.dy = - (thisBarHeight * (index)) - 20
+            element.y = marginTop + thisBarHt * index
+            element.dy = - (thisBarHt * (index)) - 20
           }
           else {
-            element.y = marginTop + this.viewModel.settings.annotationSettings.barHeight
-            element.dy = -20 - this.viewModel.settings.annotationSettings.barHeight
+            element.y = marginTop + this.viewModel.settings.annotationSettings.barHt
+            element.dy = -20 - this.viewModel.settings.annotationSettings.barHt
           }
         }
 
@@ -1161,7 +1161,7 @@ export class Visual implements IVisual {
 
         }
         if (!element.y) {
-          element.y = element.Top ? marginTop : marginTop + this.viewModel.settings.annotationSettings.barHeight;
+          element.y = element.Top ? marginTop : marginTop + this.viewModel.settings.annotationSettings.barHt;
         }
         // }
       }
@@ -1172,19 +1172,19 @@ export class Visual implements IVisual {
 
             let index = barElements.indexOf(element)
 
-            element.y = marginTopStagger + thisBarHeight * index
-            element.dy = - (thisBarHeight * (index))
+            element.y = marginTopStagger + thisBarHt * index
+            element.dy = - (thisBarHt * (index))
             element.dy += this.viewModel.settings.annotationSettings.spacing * (-1 * countTop)
           }
           else {
-            element.y = marginTopStagger + this.viewModel.settings.annotationSettings.barHeight
-            element.dy = this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) - this.viewModel.settings.annotationSettings.barHeight
+            element.y = marginTopStagger + this.viewModel.settings.annotationSettings.barHt
+            element.dy = this.viewModel.settings.annotationSettings.spacing * (-1 * countTop) - this.viewModel.settings.annotationSettings.barHt
           }
         }
 
 
         if (!element.y) {
-          element.y = element.Top ? marginTopStagger : marginTopStagger + this.viewModel.settings.annotationSettings.barHeight;
+          element.y = element.Top ? marginTopStagger : marginTopStagger + this.viewModel.settings.annotationSettings.barHt;
 
         }
         if (!element.dy) {
