@@ -1265,7 +1265,7 @@ export class Visual implements IVisual {
       let selectionManager = this.selectionManager;
 
       // handle context menu - right click
-      this.svgGroupMain.on('contextmenu', () => {
+      this.svg.on('contextmenu', () => {
         const mouseEvent: MouseEvent = d3.event as MouseEvent;
         const eventTarget: EventTarget = mouseEvent.target;
         let dataPoint: any = d3.select(<Element>eventTarget).datum();
