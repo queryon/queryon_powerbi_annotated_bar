@@ -640,13 +640,21 @@ export class Visual implements IVisual {
     return objectEnumeration;
   }
 
-
+  private validateData(data: AnnotatedBarDataPoint[], options: VisualUpdateOptions) {
+    if (data.length > 10000) {
+        return true;
+    }
+    return false;
+}
 
   public update(options) {
     this.events.renderingStarted(options); // Rendering Events API START
 
     this.viewModel = visualTransform(options, this.host);
-    
+    if(this.validateData(this.viewModel.dataPoints, options)) { // Short circuit if data size is too large for view type
+      this.events.renderingFailed(options); // Rendering Events API FAIL
+      return;
+  }
     let categorical = options.dataViews[0].categorical;
     if (categorical.categories && categorical.values[0].highlights) {
       this.highlighted = true
@@ -664,7 +672,6 @@ export class Visual implements IVisual {
 
 
       this.viewModel.dataPoints.forEach((element, i) => {
-      console.log(element)
       let graphElement = {}
       let barValue = 0
       let value = element.value
@@ -673,8 +680,6 @@ export class Visual implements IVisual {
 
         for (let j = i; j >= 0; j--) {
           const previousElement = this.viewModel.dataPoints[j];
-          console.log(element.value)
-          console.log(previousElement.value)
           if (element.value >= 0 && previousElement.value >= 0) {
             barValue += previousElement.value
           } else if (element.value < 0 && previousElement.value < 0) {
