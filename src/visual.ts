@@ -1,6 +1,5 @@
 "use strict";
 
-
 import "core-js/stable";
 import 'regenerator-runtime/runtime'
 import "./../style/visual.less";
@@ -10,17 +9,13 @@ import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import IVisualEventService = powerbi.extensibility.IVisualEventService;
 import IVisual = powerbi.extensibility.visual.IVisual;
 import ISelectionManager = powerbi.extensibility.ISelectionManager
-// tooltips
 import ITooltipService = powerbi.extensibility.ITooltipService;
 import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem; 
 
 import EnumerateVisualObjectInstancesOptions = powerbi.EnumerateVisualObjectInstancesOptions;
 import VisualObjectInstance = powerbi.VisualObjectInstance;
 import ISelectionIdBuilder = powerbi.visuals.ISelectionIdBuilder;
-// import DataView = powerbi.DataView;
 import ISelectionId = powerbi.visuals.ISelectionId;
-// import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
-// import PrimitiveValue = powerbi.PrimitiveValue;
 import Fill = powerbi.Fill;
 import * as d3 from "d3";
 import * as svgAnnotations from "d3-svg-annotation";
@@ -40,12 +35,14 @@ import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import { color } from "d3";
 
+import { getTextHeight, getTextHeight as help } from './helper_methods';
+
+
 //Global settings to the visual
 interface AnnotatedBarSettings {
   annotationSettings: {
     stagger: boolean,
     spacing: any,
-    // editMode: boolean,
     separator: string,
     sameAsBarColor: boolean,
     hideLabels: boolean,
@@ -861,35 +858,6 @@ export class Visual implements IVisual {
     return textWidth
   }
 
-  private getTextHeight(textString: string, fontSize: number, fontFamily: string) {
-    let textData = [textString]
-
-    let textHeight
-
-    //Measure text's width for correct positioning of annotation
-    this.svg.append('g')
-      .selectAll('.dummyText')
-      .data(textData)
-      .enter()
-      .append("text")
-      .attr("font-family", fontFamily)
-      .attr("font-size", fontSize)
-      .text(d => d)
-      .attr("color", function(d){
-        //Irrelevant color. ".EACH" does not work on IE and we need to iterate over the elements after they have been appended to dom.
-        let thisHeight = this.getBBox().height
-        textHeight = thisHeight
-        // this.remove()
-        if (this.parentNode) {
-            this.parentNode.removeChild(this);
-        }
-           
-        
-        return "white"
-    })
-
-    return textHeight
-  }
   private getAnnotationOrientation(element) {
     if (element.textWidth + element.x > this.width - this.padding * 2) {
       return "right"
