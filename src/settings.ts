@@ -18,6 +18,7 @@ export class AnnotationSettings {
     public spacing: number = 20;
     public separator: string = ':';
     public sameAsBarColor: boolean = false;
+    public hideLabels: boolean = false;
     public barHt: number = 30;
     public displayUnits: number = 0;
     public precision: boolean = false;

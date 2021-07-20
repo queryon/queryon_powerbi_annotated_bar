@@ -286,6 +286,12 @@
                         "bool": true
                     }
                 },
+                "hideLabels": {
+                    "displayName": "Hide labels",
+                    "type": {
+                        "bool": true
+                    }
+                },
                 "displayUnits": {
                     "displayName": "Display Units",
                     "displayNameKey": "Visual_DisplayUnits",

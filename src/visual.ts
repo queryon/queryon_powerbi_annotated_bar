@@ -47,6 +47,7 @@ interface AnnotatedBarSettings {
     // editMode: boolean,
     separator: string,
     sameAsBarColor: boolean,
+    hideLabels: boolean,
     barHt: number,
     displayUnits: number,
     precision: any,
@@ -115,8 +116,11 @@ function createFormatter(format, precision?: any, value?: number) {
 
 function visualTransform(options: VisualUpdateOptions, host: IVisualHost): AnnotatedBarViewModel {
   let dataViews = options.dataViews, defaultSettings: AnnotatedBarSettings = {
-    annotationSettings: {
-      sameAsBarColor: false,stagger: true, spacing: 20,barHt: 30, displayUnits: 0,precision: false, overlapStyle: 'full',labelInfo: 'Auto', separator: ":" },
+    annotationSettings: 
+    {
+      sameAsBarColor: false, hideLabels: false, stagger: true, spacing: 20,barHt: 30, displayUnits: 0,precision: false, overlapStyle: 'full',labelInfo: 'Auto', separator: ":",
+      
+    },
     axisSettings: {
       axis: "None",axisColor: { solid: { color: 'gray' } }, fontSize: 12,fontFamily: 'Arial', bold: false,manualScale: true, barMin: false,barMax: false },
     textFormatting: {
@@ -134,6 +138,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
   let annotatedBarSettings: AnnotatedBarSettings = {
     annotationSettings: {
       sameAsBarColor: getValue<boolean>(objects, 'annotationSettings', 'sameAsBarColor', defaultSettings.annotationSettings.sameAsBarColor),
+      hideLabels: getValue<boolean>(objects, 'annotationSettings', 'hideLabels', defaultSettings.annotationSettings.hideLabels),
       stagger: getValue<boolean>(objects, 'annotationSettings', 'stagger', defaultSettings.annotationSettings.stagger),
       separator: getValue<string>(objects, 'annotationSettings', 'separator', defaultSettings.annotationSettings.separator),
       barHt: getValue<number>(objects, 'annotationSettings', 'barHt', defaultSettings.annotationSettings.barHt),
@@ -330,6 +335,7 @@ export class Visual implements IVisual {
             labelInfo: this.viewModel.settings.annotationSettings.labelInfo,
             barHt: this.viewModel.settings.annotationSettings.barHt,
             sameAsBarColor: this.viewModel.settings.annotationSettings.sameAsBarColor,
+            hideLabels: this.viewModel.settings.annotationSettings.hideLabels,
             displayUnits: this.viewModel.settings.annotationSettings.displayUnits,
             precision: this.viewModel.settings.annotationSettings.precision,
             stagger: this.viewModel.settings.annotationSettings.stagger,
