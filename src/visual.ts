@@ -38,6 +38,7 @@ import DataViewObject = powerbi.DataViewObject;
 import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
 
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
+import { color } from "d3";
 
 //Global settings to the visual
 interface AnnotatedBarSettings {
@@ -350,10 +351,17 @@ export class Visual implements IVisual {
           objectName: objectName,
           properties: {allTextTop: this.viewModel.settings.textFormatting.allTextTop,
           },selector: null})
-        if (!this.viewModel.settings.annotationSettings.sameAsBarColor) {
+
+        if (this.viewModel.settings.annotationSettings.hideLabels) {
           objectEnumeration.push({
             objectName: objectName,
             properties: {fill: {solid: {color: this.viewModel.settings.textFormatting.fill}}},selector: null})}
+
+        if (!this.viewModel.settings.annotationSettings.sameAsBarColor) {
+          objectEnumeration.push({
+            objectName: objectName,
+            properties: {fill: {solid: {color: false}}},selector: null})
+          }
         objectEnumeration.push({
           objectName: objectName,properties: {
             labelOrientation: this.viewModel.settings.textFormatting.labelOrientation,
@@ -530,6 +538,7 @@ export class Visual implements IVisual {
   }
 
   private setGraphElementValuesFromViewModel(graphElement: {}, displayName: string, element: AnnotatedBarDataPoint, annotationColor: any, elementTop: boolean, annotationSize: number, annotationFont: string, labelOrientation: string, stackedBarX: any) {
+    
     graphElement["Category"] = displayName;
     graphElement["Value"] = element.value;
     graphElement["Color"] = element.barColor;
@@ -553,8 +562,18 @@ export class Visual implements IVisual {
     graphElement["dx"] = 0;
     graphElement["highlight"] = element.highlight;
     graphElement["stackedBarX"] = stackedBarX;
-  }
 
+    if (this.viewModel.settings.annotationSettings.hideLabels === true)
+    {
+      graphElement["annotationText"] = "";
+      this.viewModel.settings.textFormatting.annotationStyle == 'textOnly';
+    }
+
+    //if (this.viewModel.settings.textFormatting.annotationStyle === 'textOnly') {
+    //  makeAnnotations.disable(["connector"]); }
+
+  }
+  
   private handleAxisSettings(scale: d3.ScaleLinear<number, number>, valueFormatter: vf.IValueFormatter) {
     let x_axis;
     if (this.viewModel.settings.axisSettings.axis === "Percentage") {
@@ -600,9 +619,12 @@ export class Visual implements IVisual {
       makeAnnotations = svgAnnotations.annotation()
         .annotations(annotationsData)
         .type(type);
+
+      
       if (this.viewModel.settings.textFormatting.annotationStyle === 'textOnly') {
         makeAnnotations
           .disable(["connector"]); }
+
       this.svgGroupMain
         .append("g")
         .attr('class', `annotation_selector_${element.Category.replace(/\W/g, '')} annotationSelector`)
