@@ -58,6 +58,7 @@ interface AnnotatedBarSettings {
     bold: boolean,
     axis: any,
     axisColor: any,
+    displayAxisTick: boolean,
     fontSize: number,
     fontFamily: string,
     manualScale: boolean,
@@ -118,14 +119,12 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
   let dataViews = options.dataViews, defaultSettings: AnnotatedBarSettings = {
     annotationSettings: 
     {
-      sameAsBarColor: false, hideLabels: false, stagger: true, spacing: 20,barHt: 30, displayUnits: 0,precision: false, overlapStyle: 'full',labelInfo: 'Auto', separator: ":",
-      
-    },
-    axisSettings: {
-      axis: "None",axisColor: { solid: { color: 'gray' } }, fontSize: 12,fontFamily: 'Arial', bold: false,manualScale: true, barMin: false,barMax: false },
-    textFormatting: {
-      allTextTop: false,labelOrientation: "Auto", annotationStyle: "annotationLabel",fontSize: 12, FontFamily: 'Arial',fill: { solid: { color: 'gray' } } }
-  };
+    sameAsBarColor: false, hideLabels: false, stagger: true, spacing: 20,barHt: 30, displayUnits: 0,precision: false, overlapStyle: 'full',labelInfo: 'Auto', separator: ":", },
+    axisSettings: { axis: "None",axisColor: { solid: { color: 'gray' } }, displayAxisTick: true, fontSize: 12,fontFamily: 'Arial', bold: false,manualScale: true, barMin: false,barMax: false },
+    textFormatting: { allTextTop: false,labelOrientation: "Auto", annotationStyle: "annotationLabel",fontSize: 12, FontFamily: 'Arial',fill: { solid: { color: 'gray' } } }
+
+    };
+
   let viewModel: AnnotatedBarViewModel = { dataPoints: [], settings: defaultSettings };
   let objects = dataViews[0].metadata.objects;
   if (!dataViews || !dataViews[0] || !dataViews[0].categorical || !dataViews[0].categorical.values) { return viewModel; }
@@ -150,6 +149,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
     axisSettings: {
       axis: getValue<any>(objects, 'axisSettings', 'axis', defaultSettings.axisSettings.axis),
       axisColor: getValue<string>(objects, 'axisSettings', 'axisColor', defaultSettings.axisSettings.axisColor),
+      displayAxisTick: getValue<boolean>(objects, 'axisSettings', 'displayAxisTick', defaultSettings.axisSettings.displayAxisTick),
       fontSize: getValue<number>(objects, 'axisSettings', 'fontSize', defaultSettings.axisSettings.fontSize),
       fontFamily: getValue<string>(objects, 'axisSettings', 'fontFamily', defaultSettings.axisSettings.fontFamily),
       bold: getValue<boolean>(objects, 'axisSettings', 'bold', defaultSettings.axisSettings.bold),
@@ -390,6 +390,12 @@ export class Visual implements IVisual {
         }
         break;
       case 'axisSettings':
+
+        objectEnumeration.push({
+          objectName: objectName, properties: {
+            axis: this.viewModel.settings.axisSettings.displayAxisTick,
+            displayAxisTick: this.viewModel.settings.axisSettings.displayAxisTick
+          },selector: null});
         objectEnumeration.push({
           objectName: objectName, properties: {
             axis: this.viewModel.settings.axisSettings.axis,
@@ -564,13 +570,18 @@ export class Visual implements IVisual {
       this.viewModel.settings.textFormatting.annotationStyle == 'textOnly';
     }
 
-    //if (this.viewModel.settings.textFormatting.annotationStyle === 'textOnly') {
-    //  makeAnnotations.disable(["connector"]); }
+    if (this.viewModel.settings.axisSettings.displayAxisTick === true)
+    {
+      //graphElement["annotationText"] = "";
+      //this.viewModel.settings.textFormatting.annotationStyle == 'textOnly';
+    }
+
 
   }
   
 
   private handleAxisSettings(scale: d3.ScaleLinear<number, number>, valueFormatter: vf.IValueFormatter) {
+
     let x_axis;
     if (this.viewModel.settings.axisSettings.axis === "Percentage") {
       x_axis = d3.axisBottom(d3.scaleLinear()
@@ -781,6 +792,11 @@ export class Visual implements IVisual {
   }
 
   private appendGroupInsertAxis(marginTopStagger: number, marginTop: number, x_axis: any) {
+    
+    if(this.viewModel.settings.axisSettings.displayAxisTick === true) // If display axis ticks is turned on just return
+    {
+      return;
+    }
     this.svgGroupMain.append("g")
       .attr("transform", "translate(" + this.padding + "," + ((this.viewModel.settings.annotationSettings.stagger ? marginTopStagger : marginTop) + this.viewModel.settings.annotationSettings.barHt) + ")")
       .call(x_axis)

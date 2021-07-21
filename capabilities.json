@@ -494,6 +494,12 @@
                             }
                         }
                     }
+                },
+                "displayAxisTick": {
+                    "displayName": "Display Axis Ticks",
+                    "type": {
+                        "bool": true
+                    }
                 }
             }
         }
