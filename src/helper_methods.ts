@@ -1,31 +1,15 @@
 import powerbi from "powerbi-visuals-api";
 
-export function getTextHeight(textString: string, fontSize: number, fontFamily: string) {
-    let textData = [textString]
+import { valueFormatter as vf, } from "powerbi-visuals-utils-formattingutils";
 
-    let textHeight
+export function createFormatter(format, precision?: any, value?: number) {
+    let valueFormatter = {}
+    valueFormatter["format"] = format;
+    valueFormatter["value"] = value
+  
+    if (precision !== false) {
+      valueFormatter["precision"] = precision
+    }
 
-    //Measure text's width for correct positioning of annotation
-    this.svg.append('g')
-      .selectAll('.dummyText')
-      .data(textData)
-      .enter()
-      .append("text")
-      .attr("font-family", fontFamily)
-      .attr("font-size", fontSize)
-      .text(d => d)
-      .attr("color", function(d){
-        //Irrelevant color. ".EACH" does not work on IE and we need to iterate over the elements after they have been appended to dom.
-        let thisHeight = this.getBBox().height
-        textHeight = thisHeight
-        // this.remove()
-        if (this.parentNode) {
-            this.parentNode.removeChild(this);
-        }
-           
-        console.log("Still Working");
-        return "white"
-    })
-
-    return textHeight
+    return vf.create(valueFormatter)
   }

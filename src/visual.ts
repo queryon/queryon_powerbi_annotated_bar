@@ -35,8 +35,7 @@ import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import { color } from "d3";
 
-import { getTextHeight, getTextHeight as help } from './helper_methods';
-
+import {createFormatter} from './helper_methods';
 
 //Global settings to the visual
 interface AnnotatedBarSettings {
@@ -100,30 +99,16 @@ interface AnnotatedBarViewModel {
   settings: AnnotatedBarSettings
 }
 
-function createFormatter(format, precision?: any, value?: number) {
-  let valueFormatter = {}
-  valueFormatter["format"] = format;
-  valueFormatter["value"] = value
-
-  if (precision !== false) {
-    valueFormatter["precision"] = precision
-  }
-
-  return vf.create(valueFormatter)
-}
-
 function visualTransform(options: VisualUpdateOptions, host: IVisualHost): AnnotatedBarViewModel {
   let dataViews = options.dataViews, defaultSettings: AnnotatedBarSettings = {
     annotationSettings: 
     {
-      sameAsBarColor: false, hideLabels: false, stagger: true, spacing: 20,barHt: 30, displayUnits: 0,precision: false, overlapStyle: 'full',labelInfo: 'Auto', separator: ":",
-      
-    },
-    axisSettings: {
-      axis: "None",axisColor: { solid: { color: 'gray' } }, fontSize: 12,fontFamily: 'Arial', bold: false,manualScale: true, barMin: false,barMax: false },
-    textFormatting: {
-      allTextTop: false,labelOrientation: "Auto", annotationStyle: "annotationLabel",fontSize: 12, FontFamily: 'Arial',fill: { solid: { color: 'gray' } } }
-  };
+
+    sameAsBarColor: false, hideLabels: false, stagger: true, spacing: 20,barHt: 30, displayUnits: 0,precision: false, overlapStyle: 'full',labelInfo: 'Auto', separator: ":", },
+    axisSettings: { axis: "None",axisColor: { solid: { color: 'gray' } }, fontSize: 12,fontFamily: 'Arial', bold: false,manualScale: true, barMin: false,barMax: false },
+    textFormatting: { allTextTop: false,labelOrientation: "Auto", annotationStyle: "annotationLabel",fontSize: 12, FontFamily: 'Arial',fill: { solid: { color: 'gray' } } }
+
+    };
   let viewModel: AnnotatedBarViewModel = { dataPoints: [], settings: defaultSettings };
   let objects = dataViews[0].metadata.objects;
   if (!dataViews || !dataViews[0] || !dataViews[0].categorical || !dataViews[0].categorical.values) { return viewModel; }
@@ -167,7 +152,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
   let length = categorical.categories ? Math.max(categorical.categories[0].values.length, categorical.values[0].values.length) : dataValues.length
   for (let i = 0, len = length; i < len; i++) {
     let defaultBarColor: Fill = {solid: {color: customColors[i > 10 ? i % 10 : i]}}
-    let format, valueFormatter, dataPointValue, displayName, selectionId, colName, colVal
+    let format, valueFormatter1, dataPointValue, displayName, selectionId, colName, colVal
     if (!categorical.categories) {
       format = options.dataViews[0].categorical.values[i].source.format;
       dataPointValue = dataValues[i].values[0]
@@ -192,7 +177,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
         .createSelectionId()
     }
     if (isNaN(dataPointValue)) {return viewModel;}
-    valueFormatter = createFormatter(format, annotatedBarSettings.annotationSettings.precision, annotatedBarSettings.annotationSettings.displayUnits);
+    valueFormatter1 = createFormatter(format, annotatedBarSettings.annotationSettings.precision, annotatedBarSettings.annotationSettings.displayUnits);
     let dataPoint = {
       colName: colName, colVal: colVal, value: dataPointValue, displayName: displayName,
       barColor: getCategoricalObjectValue<Fill>(categorical, i, 'barColorSelector', 'fill', defaultBarColor).solid.color,
@@ -207,7 +192,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       top: getCategoricalObjectValue<string>(categorical, i, 'textFormatting', 'top', "bottom"),
       labelOrientation: getCategoricalObjectValue<string>(categorical, i, 'textFormatting', 'labelOrientation', "Auto"),
       customFormat: getCategoricalObjectValue<boolean>(categorical, i, 'textFormatting', 'customFormat', false),
-      transformed: valueFormatter.format(dataPointValue), selectionId: selectionId,
+      transformed: valueFormatter1.format(dataPointValue), selectionId: selectionId,
       highlight: highlightsArray && highlightsArray[i] ? true : false }
     annotatedBarDataPoints.push(dataPoint);
   }
@@ -319,113 +304,12 @@ export class Visual implements IVisual {
     this.events = options.host.eventService;
   }
 
+  /*
+  When a value is changed in the Format Section of a graph on Power Bi enumerateObjectInstances() is called.
+  */
   public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
-    //Push custom attributes to property pane, as well as dynamic names.
-    let objectName = options.objectName;
-    let objectEnumeration: VisualObjectInstance[] = [];
-    let dataPoints = this.viewModel.dataPoints.concat()
-    switch (objectName) {
-      case 'annotationSettings':
-        objectEnumeration.push({
-          objectName: objectName,
-          properties: {
-            overlapStyle: this.viewModel.settings.annotationSettings.overlapStyle,
-            labelInfo: this.viewModel.settings.annotationSettings.labelInfo,
-            barHt: this.viewModel.settings.annotationSettings.barHt,
-            sameAsBarColor: this.viewModel.settings.annotationSettings.sameAsBarColor,
-            hideLabels: this.viewModel.settings.annotationSettings.hideLabels,
-            displayUnits: this.viewModel.settings.annotationSettings.displayUnits,
-            precision: this.viewModel.settings.annotationSettings.precision,
-            stagger: this.viewModel.settings.annotationSettings.stagger,
-          },selector: null});
-        if (this.viewModel.settings.annotationSettings.labelInfo === 'Auto') {
-          objectEnumeration.push({
-            objectName: objectName,
-            properties: { separator: this.viewModel.settings.annotationSettings.separator, },selector: null});}
-        break
-      case 'textFormatting':
-        objectEnumeration.push({
-          objectName: objectName,
-          properties: {allTextTop: this.viewModel.settings.textFormatting.allTextTop,
-          },selector: null})
-
-        if (this.viewModel.settings.annotationSettings.hideLabels) {
-          objectEnumeration.push({
-            objectName: objectName,
-            properties: {fill: {solid: {color: this.viewModel.settings.textFormatting.fill}}},selector: null})}
-
-        if (!this.viewModel.settings.annotationSettings.sameAsBarColor) {
-          objectEnumeration.push({
-            objectName: objectName,
-            properties: {fill: {solid: {color: false}}},selector: null})
-          }
-        objectEnumeration.push({
-          objectName: objectName,properties: {
-            labelOrientation: this.viewModel.settings.textFormatting.labelOrientation,
-            annotationStyle: this.viewModel.settings.textFormatting.annotationStyle,
-            FontFamily: this.viewModel.settings.textFormatting.FontFamily,
-            fontSize: this.viewModel.settings.textFormatting.fontSize
-          },selector: null})
-        for (let barDataPoint of dataPoints){//.sort((a, b) => (a.value > b.value) ? 1 : -1)) {
-          objectEnumeration.push({
-            objectName: objectName, displayName: barDataPoint.displayName + " custom format",
-            properties: {customFormat: barDataPoint.customFormat},selector: barDataPoint.selectionId.getSelector()});
-          if (barDataPoint.customFormat) {
-            if (!this.viewModel.settings.annotationSettings.sameAsBarColor) {
-              objectEnumeration.push({
-                objectName: objectName, displayName: barDataPoint.displayName + " Color",
-                properties: {fill: {solid: {color: barDataPoint.LabelColor}}
-                },selector: barDataPoint.selectionId.getSelector()});
-            }
-            objectEnumeration.push({
-              objectName: objectName, displayName: barDataPoint.displayName + " text position",
-              properties: {top: barDataPoint.top
-              },selector: barDataPoint.selectionId.getSelector()});
-            objectEnumeration.push({
-              objectName: barDataPoint.displayName, displayName: barDataPoint.displayName,
-              properties: {
-                FontFamily: barDataPoint.FontFamily, fontSize: barDataPoint.fontSize},selector: barDataPoint.selectionId.getSelector()});
-            objectEnumeration.push({
-              objectName: objectName, displayName: barDataPoint.displayName + " Label orientation",
-              properties: { labelOrientation: barDataPoint.labelOrientation },selector: barDataPoint.selectionId.getSelector()}); }
-        }
-        break;
-      case 'axisSettings':
-        objectEnumeration.push({
-          objectName: objectName, properties: {
-            axis: this.viewModel.settings.axisSettings.axis,
-            axisColor: this.viewModel.settings.axisSettings.axisColor
-          },selector: null});
-        if (this.viewModel.settings.axisSettings.axis !== "None") {
-          objectEnumeration.push({
-            objectName: objectName, properties: {
-              fontSize: this.viewModel.settings.axisSettings.fontSize,
-              fontFamily: this.viewModel.settings.axisSettings.fontFamily,
-              bold: this.viewModel.settings.axisSettings.bold
-            },selector: null});}
-        if (this.viewModel.settings.annotationSettings.overlapStyle !== "stacked") {
-          objectEnumeration.push({
-            objectName: objectName, properties: {manualScale: this.viewModel.settings.axisSettings.manualScale,
-            },selector: null});
-          if (this.viewModel.settings.axisSettings.manualScale) {
-            objectEnumeration.push({
-              objectName: objectName, properties: {
-                barMin: this.viewModel.settings.axisSettings.barMin, barMax: this.viewModel.settings.axisSettings.barMax,
-              },selector: null});}}
-        break
-      case 'barColorSelector':
-        for (let barDataPoint of dataPoints){//.sort((a, b) => (a.value > b.value) ? 1 : -1)) {
-          objectEnumeration.push({
-            objectName: objectName, displayName: "Display " + barDataPoint.displayName + " in bar",
-            properties: {ShowInBar: barDataPoint.ShowInBar
-            },selector: barDataPoint.selectionId.getSelector()});
-          if (barDataPoint.ShowInBar) {
-            objectEnumeration.push({
-              objectName: objectName, displayName: barDataPoint.displayName,
-              properties: {fill: {solid: {color: barDataPoint.barColor}} },selector: barDataPoint.selectionId.getSelector()});}}
-        break;
-    };
-    return objectEnumeration;
+    console.log("Something is changed");
+    return;
   }
 
   private validateData(data: AnnotatedBarDataPoint[], options: VisualUpdateOptions) {
@@ -434,6 +318,8 @@ export class Visual implements IVisual {
     }
     return false;
 }
+
+
 
   public update(options) {
     this.events.renderingStarted(options); // Rendering Events API START
@@ -532,6 +418,35 @@ export class Visual implements IVisual {
     // handle annotations positioning
     ({ countTop, countBottom, annotationsData, makeAnnotations } = this.handleAnnotationPositions(annotationElements, scale, alignment, barElements, marginTop, thisBarHt, marginTopStagger, countTop, countBottom, annotationsData, makeAnnotations, type, categorical));
     this.events.renderingFinished(options); // Rendering Events API FINISH
+  }
+
+  private getTextHeight(textString: string, fontSize: number, fontFamily: string) {
+    let textData = [textString]
+
+    let textHeight
+
+    //Measure text's width for correct positioning of annotation
+    this.svg.append('g')
+      .selectAll('.dummyText')
+      .data(textData)
+      .enter()
+      .append("text")
+      .attr("font-family", fontFamily)
+      .attr("font-size", fontSize)
+      .text(d => d)
+      .attr("color", function(d){
+        //Irrelevant color. ".EACH" does not work on IE and we need to iterate over the elements after they have been appended to dom.
+        let thisHeight = this.getBBox().height
+        textHeight = thisHeight
+        // this.remove()
+        if (this.parentNode) {
+            this.parentNode.removeChild(this);
+        }
+           
+        return "white"
+    })
+
+    return textHeight
   }
 
   private setGraphElementValuesFromViewModel(graphElement: {}, displayName: string, element: AnnotatedBarDataPoint, annotationColor: any, elementTop: boolean, annotationSize: number, annotationFont: string, labelOrientation: string, stackedBarX: any) {
