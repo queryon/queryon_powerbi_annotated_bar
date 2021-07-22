@@ -543,19 +543,7 @@ private validateData(data: AnnotatedBarDataPoint[], options: VisualUpdateOptions
       .range([0, this.width - (this.padding * 2)]); //min and max width in px           
     // set height and width of root SVG element using viewport passed by Power BI host
 
-    if (this.viewModel.settings.annotationSettings.hideBorder === true)
-    {
-      this.svg.attr("height", this.height)
-      .attr("width", this.width)
-      .attr("stroke", 'transparent');
-    }
-    else
-    {
-      this.svg.attr("height", this.height)
-      .attr("width", this.width)
-      .attr("stroke", 'gray');
-    }
-
+    this.ifHideBorder();
 
     //axis settings
     let x_axis = this.handleAxisSettings(scale, valueFormatter);
@@ -582,6 +570,22 @@ private validateData(data: AnnotatedBarDataPoint[], options: VisualUpdateOptions
     // handle annotations positioning
     ({ countTop, countBottom, annotationsData, makeAnnotations } = this.handleAnnotationPositions(annotationElements, scale, alignment, barElements, marginTop, thisBarHt, marginTopStagger, countTop, countBottom, annotationsData, makeAnnotations, type, categorical));
     this.events.renderingFinished(options); // Rendering Events API FINISH
+  }
+
+  private ifHideBorder()
+  {
+    if (this.viewModel.settings.annotationSettings.hideBorder === true)
+    {
+      this.svg.attr("height", this.height)
+      .attr("width", this.width)
+      .attr("stroke", 'transparent');
+    }
+    else
+    {
+      this.svg.attr("height", this.height)
+      .attr("width", this.width)
+      .attr("stroke", 'gray');
+    }
   }
 
   private getTextHeight(textString: string, fontSize: number, fontFamily: string) {
