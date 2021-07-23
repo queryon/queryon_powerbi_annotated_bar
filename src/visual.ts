@@ -35,8 +35,6 @@ import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import { color } from "d3";
 
-import {createFormatter} from './helper_methods';
-
 //Global settings to the visual
 interface AnnotatedBarSettings {
   annotationSettings: {
@@ -69,7 +67,8 @@ interface AnnotatedBarSettings {
     annotationStyle: string,
     fill: any,
     FontFamily: string,
-    fontSize: number
+    fontSize: number,
+    labelToolTip: string
   }
 }
 
@@ -84,6 +83,7 @@ export interface AnnotatedBarDataPoint {
   LabelColor: string
   FontFamily: string
   fontSize: number
+  labelToolTip: string;
   ShowInBar: boolean
   dx: any
   dy: any
@@ -105,7 +105,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
   let dataViews = options.dataViews, defaultSettings: AnnotatedBarSettings = {
     annotationSettings: { sameAsBarColor: false, hideLabels: false, hideBorder: false, stagger: true, spacing: 20,barHt: 30, displayUnits: 0,precision: false, overlapStyle: 'full',labelInfo: 'Auto', separator: ":", },
     axisSettings: { axis: "None",axisColor: { solid: { color: 'gray' } }, displayAxisTick: true, fontSize: 12,fontFamily: 'Arial', bold: false,manualScale: true, barMin: false,barMax: false },
-    textFormatting: { allTextTop: false,labelOrientation: "Auto", annotationStyle: "annotationLabel",fontSize: 12, FontFamily: 'Arial',fill: { solid: { color: 'gray' } } }
+    textFormatting: { allTextTop: false,labelOrientation: "Auto", annotationStyle: "annotationLabel",fontSize: 12, labelToolTip: "", FontFamily: 'Arial',fill: { solid: { color: 'gray' } } }
 
     };
   let viewModel: AnnotatedBarViewModel = { dataPoints: [], settings: defaultSettings };
@@ -145,6 +145,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       labelOrientation: getValue<string>(objects, 'textFormatting', 'labelOrientation', defaultSettings.textFormatting.labelOrientation),
       annotationStyle: getValue<string>(objects, 'textFormatting', 'annotationStyle', defaultSettings.textFormatting.annotationStyle),
       fontSize: getValue<number>(objects, 'textFormatting', 'fontSize', defaultSettings.textFormatting.fontSize),
+      labelToolTip: getValue<string>(objects, 'textFormatting', 'labelToolTip', defaultSettings.textFormatting.labelToolTip),
       FontFamily: getValue<string>(objects, 'textFormatting', 'FontFamily', defaultSettings.textFormatting.FontFamily),
       fill: getValue<any>(objects, 'textFormatting', 'fill', defaultSettings.textFormatting.fill).solid.color} }
   let annotatedBarDataPoints: AnnotatedBarDataPoint[] = [];
@@ -185,6 +186,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       LabelColor: getCategoricalObjectValue<Fill>(categorical, i, 'textFormatting', 'fill', { solid: { color: "gray" } }).solid.color,
       FontFamily: getCategoricalObjectValue<string>(categorical, i, 'textFormatting', 'FontFamily', "Arial"),
       fontSize: getCategoricalObjectValue<number>(categorical, i, 'textFormatting', 'fontSize', 12),
+      labelToolTip: getCategoricalObjectValue<string>(categorical, i, 'textFormatting', 'labelToolTip', ""),
       ShowInBar: getCategoricalObjectValue<boolean>(categorical, i, 'barColorSelector', 'ShowInBar', true),
       dx: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dx', false),
       dy: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dy', false),
@@ -198,6 +200,18 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
     annotatedBarDataPoints.push(dataPoint);
   }
   return {dataPoints: annotatedBarDataPoints,settings: annotatedBarSettings};
+}
+
+export function createFormatter(format, precision?: any, value?: number) {
+  let valueFormatter = {}
+  valueFormatter["format"] = format;
+  valueFormatter["value"] = value
+
+  if (precision !== false) {
+    valueFormatter["precision"] = precision
+  }
+
+  return vf.create(valueFormatter)
 }
 
 export function getValue<T>(objects: DataViewObject, objectName: string, propertyName: string, defaultValue: T): T {
@@ -306,12 +320,12 @@ export class Visual implements IVisual {
   }
 
 
-/**When a value is changed in the Format Section of a graph on Power Bi enumerateObjectInstances() is called.*/
+//When a value is changed in the Format Section of a graph on Power Bi enumerateObjectInstances() is called.
 public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration 
 {
   //Push custom attributes to property pane, as well as dynamic names.
   let objectName = options.objectName;
-  console.log("enumerateObjectInstancesMAIN OBJECT NAME : " + options.objectName);
+  //console.log("enumerateObjectInstancesMAIN OBJECT NAME : " + options.objectName);
   let objectEnumeration: VisualObjectInstance[] = [];
   let dataPoints = this.viewModel.dataPoints.concat()
 
@@ -333,16 +347,16 @@ public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions):
       this.barColorSelectorUpdateWhenFormatIsChanged(objectName, dataPoints, objectEnumeration);
       break;
   };
-
+  //console.log(objectEnumeration);
   return objectEnumeration;
 }
 
-/** This Updates the "Style" section on the format menu */
+// This Updates the "Style" section on the format menu */
 private annotationSettingsUpdateWhenFormatIsChanged(objectName: string, dataPoints: AnnotatedBarDataPoint[], objectEnumeration: VisualObjectInstance[])
 {
 
   
-  console.log("running");
+  
   objectEnumeration.push({
     objectName: objectName,
     properties: {
@@ -362,7 +376,7 @@ private annotationSettingsUpdateWhenFormatIsChanged(objectName: string, dataPoin
       properties: { separator: this.viewModel.settings.annotationSettings.separator, },selector: null});}
 }
 
-/** This Updates the "Label Formatting" section on the format menu */
+// This Updates the "Label Formatting" section on the format menu */
 private textFormattingUpdateWhenFormatIsChanged(objectName: string, dataPoints: AnnotatedBarDataPoint[], objectEnumeration: VisualObjectInstance[])
 {
 objectEnumeration.push({
@@ -390,11 +404,12 @@ objectEnumeration.push({
     labelOrientation: this.viewModel.settings.textFormatting.labelOrientation,
     annotationStyle: this.viewModel.settings.textFormatting.annotationStyle,
     FontFamily: this.viewModel.settings.textFormatting.FontFamily,
-    fontSize: this.viewModel.settings.textFormatting.fontSize
+    fontSize: this.viewModel.settings.textFormatting.fontSize,
+    labelToolTip: this.viewModel.settings.textFormatting.labelToolTip
   },selector: null})
 for (let barDataPoint of dataPoints){//.sort((a, b) => (a.value > b.value) ? 1 : -1)) {
   objectEnumeration.push({
-    objectName: objectName, displayName: barDataPoint.displayName + " custom format",
+    objectName: objectName, displayName: barDataPoint.displayName + " custom format ____________________________________________________________",
     properties: {customFormat: barDataPoint.customFormat},selector: barDataPoint.selectionId.getSelector()});
   if (barDataPoint.customFormat) {
     if (!this.viewModel.settings.annotationSettings.sameAsBarColor) {
@@ -407,17 +422,25 @@ for (let barDataPoint of dataPoints){//.sort((a, b) => (a.value > b.value) ? 1 :
       objectName: objectName, displayName: barDataPoint.displayName + " text position",
       properties: {top: barDataPoint.top
       },selector: barDataPoint.selectionId.getSelector()});
+
+    objectEnumeration.push({
+      objectName: objectName, displayName: barDataPoint.displayName + " Tool Tip",
+      properties: {labelToolTip: barDataPoint.labelToolTip
+      },selector: barDataPoint.selectionId.getSelector()});
+
     objectEnumeration.push({
       objectName: barDataPoint.displayName, displayName: barDataPoint.displayName,
       properties: {
         FontFamily: barDataPoint.FontFamily, fontSize: barDataPoint.fontSize},selector: barDataPoint.selectionId.getSelector()});
+
+
     objectEnumeration.push({
       objectName: objectName, displayName: barDataPoint.displayName + " Label orientation",
       properties: { labelOrientation: barDataPoint.labelOrientation },selector: barDataPoint.selectionId.getSelector()}); }
   }
 }
 
-/**This Updates the "Xaxis" section on the format menu*/
+//This Updates the "Xaxis" section on the format menu*/
 private axisSettingsUpdateWhenFormatIsChanged(objectName: string, dataPoints: AnnotatedBarDataPoint[], objectEnumeration: VisualObjectInstance[])
 {
   objectEnumeration.push({
@@ -431,7 +454,7 @@ private axisSettingsUpdateWhenFormatIsChanged(objectName: string, dataPoints: An
       axis: this.viewModel.settings.axisSettings.displayAxisTick,
       displayAxisTick: this.viewModel.settings.axisSettings.displayAxisTick
     },selector: null});
-  console.log("displayAxisTick = " + this.viewModel.settings.axisSettings.displayAxisTick);
+  //console.log("displayAxisTick = " + this.viewModel.settings.axisSettings.displayAxisTick);
     
   if (this.viewModel.settings.axisSettings.axis !== "None") {
     objectEnumeration.push({
@@ -451,7 +474,7 @@ private axisSettingsUpdateWhenFormatIsChanged(objectName: string, dataPoints: An
         },selector: null});}}
 }
 
-/**This Updates the "Bar formatting" section on the format menu*/
+//This Updates the "Bar formatting" section on the format menu*/
 private barColorSelectorUpdateWhenFormatIsChanged(objectName: string, dataPoints: AnnotatedBarDataPoint[], objectEnumeration: VisualObjectInstance[])
 {
   for (let barDataPoint of dataPoints){//.sort((a, b) => (a.value > b.value) ? 1 : -1)) {
@@ -483,6 +506,7 @@ private validateData(data: AnnotatedBarDataPoint[], options: VisualUpdateOptions
     this.highlighted = (categorical.categories && categorical.values[0].highlights)
     let marginTop = 10, marginTopStagger = 20, graphElements = []
     this.viewModel.dataPoints.forEach((element, i) => {
+      
       let graphElement = {}, barValue = 0, value = element.value, stackedBarX
       if (this.viewModel.settings.annotationSettings.overlapStyle === 'stacked') {
         for (let j = i; j >= 0; j--) {
@@ -568,7 +592,7 @@ private validateData(data: AnnotatedBarDataPoint[], options: VisualUpdateOptions
       annotationElements = graphElements.concat().reverse()
     } else {annotationElements = graphElements.concat()}
     // handle annotations positioning
-    ({ countTop, countBottom, annotationsData, makeAnnotations } = this.handleAnnotationPositions(annotationElements, scale, alignment, barElements, marginTop, thisBarHt, marginTopStagger, countTop, countBottom, annotationsData, makeAnnotations, type, categorical));
+    ({ countTop, countBottom, annotationsData, makeAnnotations } = this.handleAnnotationPositions(graphElements, annotationElements, scale, alignment, barElements, marginTop, thisBarHt, marginTopStagger, countTop, countBottom, annotationsData, makeAnnotations, type, categorical));
     this.events.renderingFinished(options); // Rendering Events API FINISH
   }
 
@@ -620,6 +644,7 @@ private validateData(data: AnnotatedBarDataPoint[], options: VisualUpdateOptions
   private setGraphElementValuesFromViewModel(graphElement: {}, displayName: string, element: AnnotatedBarDataPoint, annotationColor: any, elementTop: boolean, annotationSize: number, annotationFont: string, labelOrientation: string, stackedBarX: any) {
     
     graphElement["Category"] = displayName;
+    graphElement["ToolTip"] = element.labelToolTip;
     graphElement["Value"] = element.value;
     graphElement["Color"] = element.barColor;
     graphElement["ShowInBar"] = element.ShowInBar;
@@ -665,7 +690,7 @@ private validateData(data: AnnotatedBarDataPoint[], options: VisualUpdateOptions
     return x_axis;
   }
 
-  private handleAnnotationPositions(annotationElements: any, scale: d3.ScaleLinear<number, number>, alignment: { className: string; note: { align: string; }; }, barElements: any[], marginTop: number, thisBarHt: any, marginTopStagger: number, countTop: number, countBottom: number, annotationsData: any, makeAnnotations: any, type: svgAnnotations.annotationCustomType<unknown>, categorical: any) {
+  private handleAnnotationPositions(graphElement: {},annotationElements: any, scale: d3.ScaleLinear<number, number>, alignment: { className: string; note: { align: string; }; }, barElements: any[], marginTop: number, thisBarHt: any, marginTopStagger: number, countTop: number, countBottom: number, annotationsData: any, makeAnnotations: any, type: svgAnnotations.annotationCustomType<unknown>, categorical: any) {
     annotationElements.forEach((element, i) => {
       element.x = !element.x ? this.padding + scale(element.Value) : this.padding + scale(element.x);
       alignment.note.align = (element.labelOrientation !== "Auto") ? element.labelOrientation : this.getAnnotationOrientation(element);
@@ -733,18 +758,10 @@ private validateData(data: AnnotatedBarDataPoint[], options: VisualUpdateOptions
         mouseEvent.preventDefault(); });
       //tooltips
       this.svg.on('mouseover', el => {
-        const mouseEvent: MouseEvent = <MouseEvent>d3.event;
-        const eventTarget: EventTarget = mouseEvent.target;
-        let args = [], dataPoint: any = d3.select(<Element>eventTarget).datum();
-        if (dataPoint && dataPoint.Category) {
-          if (categorical.categories) {
-            args = [{ displayName: dataPoint.colName, value: dataPoint.Category },
-            { displayName: dataPoint.colVal, value: dataPoint.Display }]; }
-          else {
-            args = [{ displayName: dataPoint.Category, value: dataPoint.Display }]; }
-          this.tooltipServiceWrapper.addTooltip(d3.select(<Element>eventTarget),
-            (tooltipEvent: TooltipEventArgs<number>) => args, (tooltipEvent: TooltipEventArgs<number>) => null);
-        } });
+
+        this.handleToolTips(categorical);
+        
+        });
       //handle filter and transparency
       this.svg.on('click', () => {
         const mouseEvent: MouseEvent = <MouseEvent>d3.event;
@@ -765,6 +782,34 @@ private validateData(data: AnnotatedBarDataPoint[], options: VisualUpdateOptions
             this.svgGroupMain.selectAll('.annotationSelector').style('text-decoration', "none"); });
         } }); });
     return { countTop, countBottom, annotationsData, makeAnnotations };
+  }
+
+  private handleToolTips(categorical: any) 
+  {
+    const mouseEvent: MouseEvent = <MouseEvent>d3.event;
+        const eventTarget: EventTarget = mouseEvent.target;
+        let args = [], dataPoint: any = d3.select(<Element>eventTarget).datum();
+
+        if (dataPoint && dataPoint.Category) { //if it is bar
+          
+          //console.log(this.annotatedBarSettings.textFormatting.labelToolTip);
+          //console.log("This is bar ");
+          if (categorical.categories) {       
+            args = [{ displayName: dataPoint.colName, value: dataPoint.Category }, { displayName: dataPoint.colVal, value: dataPoint.Display }]; }
+          else {
+            args = [{ displayName: dataPoint.Category, value: dataPoint.Display }]; 
+          }
+          this.tooltipServiceWrapper.addTooltip(d3.select(<Element>eventTarget), (tooltipEvent: TooltipEventArgs<number>) => args, (tooltipEvent: TooltipEventArgs<number>) => null);
+        }
+
+        if (dataPoint._type.textWrap) //This feature was removed temp because of outdated API from powerbi tooltips. Will resume when fixed
+        { //if it is text
+          //console.log("tooltip = " + this.viewModel.settings.textFormatting.labelToolTip);
+          //console.log("This is text ");
+          //args = [{ displayName: this.viewModel.settings.textFormatting.labelToolTip}]; 
+        }
+        
+        //this.tooltipServiceWrapper.addTooltip(d3.select(<Element>eventTarget), (tooltipEvent: TooltipEventArgs<number>) => args, (tooltipEvent: TooltipEventArgs<number>) => null);
   }
 
   private setBarSettings(graphElements: any[], marginTopStagger: number, marginTop: number, scale: d3.ScaleLinear<number, number>) {

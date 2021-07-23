@@ -44,5 +44,6 @@ export class TextFormattingSettings {
     public annotationStyle: string = 'annotationLabel';
     public fill: powerbi.Fill = { solid: { color: 'gray' } };
     public FontFamily: string = 'Arial';
-    public fontSize: number = 12
+    public fontSize: number = 12;
+    public labelToolTip: string = "";
 }
