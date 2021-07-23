@@ -742,8 +742,8 @@ private validateData(data: AnnotatedBarDataPoint[], options: VisualUpdateOptions
             { displayName: dataPoint.colVal, value: dataPoint.Display }]; }
           else {
             args = [{ displayName: dataPoint.Category, value: dataPoint.Display }]; }
-          //this.tooltipServiceWrapper.addTooltip(d3.select(<Element>eventTarget),
-          //  (tooltipEvent: TooltipEventArgs<number>) => args, (tooltipEvent: TooltipEventArgs<number>) => null);
+          this.tooltipServiceWrapper.addTooltip(d3.select(<Element>eventTarget),
+            (tooltipEvent: TooltipEventArgs<number>) => args, (tooltipEvent: TooltipEventArgs<number>) => null);
         } });
       //handle filter and transparency
       this.svg.on('click', () => {
