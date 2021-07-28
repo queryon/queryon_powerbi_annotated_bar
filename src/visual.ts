@@ -802,12 +802,12 @@ private validateData(data: AnnotatedBarDataPoint[], options: VisualUpdateOptions
           this.tooltipServiceWrapper.addTooltip(d3.select(<Element>eventTarget), (tooltipEvent: TooltipEventArgs<number>) => args, (tooltipEvent: TooltipEventArgs<number>) => null);
         }
 
-        if (dataPoint._type.textWrap) //This feature was removed temp because of outdated API from powerbi tooltips. Will resume when fixed
-        { //if it is text
+        //if (dataPoint._type.textWrap) //This feature was removed temp because of outdated API from powerbi tooltips. Will resume when fixed
+        //{ //if it is text
           //console.log("tooltip = " + this.viewModel.settings.textFormatting.labelToolTip);
           //console.log("This is text ");
           //args = [{ displayName: this.viewModel.settings.textFormatting.labelToolTip}]; 
-        }
+        //}
         
         //this.tooltipServiceWrapper.addTooltip(d3.select(<Element>eventTarget), (tooltipEvent: TooltipEventArgs<number>) => args, (tooltipEvent: TooltipEventArgs<number>) => null);
   }
