@@ -48,6 +48,7 @@ interface AnnotatedBarSettings {
     separator: string,
     sameAsBarColor: boolean,
     hideLabels: boolean,
+    hideBorder: boolean,
     barHt: number,
     displayUnits: number,
     precision: any,
@@ -117,9 +118,7 @@ function createFormatter(format, precision?: any, value?: number) {
 
 function visualTransform(options: VisualUpdateOptions, host: IVisualHost): AnnotatedBarViewModel {
   let dataViews = options.dataViews, defaultSettings: AnnotatedBarSettings = {
-    annotationSettings: 
-    {
-    sameAsBarColor: false, hideLabels: false, stagger: true, spacing: 20,barHt: 30, displayUnits: 0,precision: false, overlapStyle: 'full',labelInfo: 'Auto', separator: ":", },
+    annotationSettings: {sameAsBarColor: false, hideLabels: false, hideBorder: false, stagger: true, spacing: 20,barHt: 30, displayUnits: 0,precision: false, overlapStyle: 'full',labelInfo: 'Auto', separator: ":", },
     axisSettings: { axis: "None",axisColor: { solid: { color: 'gray' } }, displayAxisTick: true, fontSize: 12,fontFamily: 'Arial', bold: false,manualScale: true, barMin: false,barMax: false },
     textFormatting: { allTextTop: false,labelOrientation: "Auto", annotationStyle: "annotationLabel",fontSize: 12, FontFamily: 'Arial',fill: { solid: { color: 'gray' } } }
 
@@ -138,6 +137,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
     annotationSettings: {
       sameAsBarColor: getValue<boolean>(objects, 'annotationSettings', 'sameAsBarColor', defaultSettings.annotationSettings.sameAsBarColor),
       hideLabels: getValue<boolean>(objects, 'annotationSettings', 'hideLabels', defaultSettings.annotationSettings.hideLabels),
+      hideBorder: getValue<boolean>(objects, 'annotationSettings', 'hideBorder', defaultSettings.annotationSettings.hideBorder),
       stagger: getValue<boolean>(objects, 'annotationSettings', 'stagger', defaultSettings.annotationSettings.stagger),
       separator: getValue<string>(objects, 'annotationSettings', 'separator', defaultSettings.annotationSettings.separator),
       barHt: getValue<number>(objects, 'annotationSettings', 'barHt', defaultSettings.annotationSettings.barHt),
@@ -336,6 +336,7 @@ export class Visual implements IVisual {
             barHt: this.viewModel.settings.annotationSettings.barHt,
             sameAsBarColor: this.viewModel.settings.annotationSettings.sameAsBarColor,
             hideLabels: this.viewModel.settings.annotationSettings.hideLabels,
+            hideBorder: this.viewModel.settings.annotationSettings.hideBorder,
             displayUnits: this.viewModel.settings.annotationSettings.displayUnits,
             precision: this.viewModel.settings.annotationSettings.precision,
             stagger: this.viewModel.settings.annotationSettings.stagger,
@@ -390,16 +391,11 @@ export class Visual implements IVisual {
         }
         break;
       case 'axisSettings':
-
-        objectEnumeration.push({
-          objectName: objectName, properties: {
-            axis: this.viewModel.settings.axisSettings.displayAxisTick,
-            displayAxisTick: this.viewModel.settings.axisSettings.displayAxisTick
-          },selector: null});
         objectEnumeration.push({
           objectName: objectName, properties: {
             axis: this.viewModel.settings.axisSettings.axis,
-            axisColor: this.viewModel.settings.axisSettings.axisColor
+            axisColor: this.viewModel.settings.axisSettings.axisColor,
+            displayAxisTick: this.viewModel.settings.axisSettings.displayAxisTick
           },selector: null});
         if (this.viewModel.settings.axisSettings.axis !== "None") {
           objectEnumeration.push({
@@ -508,10 +504,22 @@ export class Visual implements IVisual {
     let scale = d3.scaleLinear()
       .domain([this.minScale !== false ? this.minScale : d3.min(graphElements, d => d.Value), this.maxScale !== false ? this.maxScale : d3.max(graphElements, d=> d.Value )]) //min and max data from input
       .range([0, this.width - (this.padding * 2)]); //min and max width in px           
+
     // set height and width of root SVG element using viewport passed by Power BI host
     this.svg.attr("height", this.height)
-      .attr("width", this.width)
-      .attr("stroke", 'gray');
+
+      if (this.viewModel.settings.annotationSettings.hideBorder === true)
+      {
+        this.svg.attr("height", this.height)
+        .attr("width", this.width)
+        .attr("stroke", 'transparent');
+      }
+      else
+      {
+        this.svg.attr("height", this.height)
+        .attr("width", this.width)
+        .attr("stroke", 'gray');
+      }
     //axis settings
     let x_axis = this.handleAxisSettings(scale, valueFormatter);
     //Append group and insert axis
@@ -569,13 +577,6 @@ export class Visual implements IVisual {
       graphElement["annotationText"] = "";
       this.viewModel.settings.textFormatting.annotationStyle == 'textOnly';
     }
-
-    if (this.viewModel.settings.axisSettings.displayAxisTick === true)
-    {
-      //graphElement["annotationText"] = "";
-      //this.viewModel.settings.textFormatting.annotationStyle == 'textOnly';
-    }
-
 
   }
   
@@ -669,8 +670,8 @@ export class Visual implements IVisual {
             { displayName: dataPoint.colVal, value: dataPoint.Display }]; }
           else {
             args = [{ displayName: dataPoint.Category, value: dataPoint.Display }]; }
-          //this.tooltipServiceWrapper.addTooltip(d3.select(<Element>eventTarget),
-          //  (tooltipEvent: TooltipEventArgs<number>) => args, (tooltipEvent: TooltipEventArgs<number>) => null);
+          this.tooltipServiceWrapper.addTooltip(d3.select(<Element>eventTarget),
+            (tooltipEvent: TooltipEventArgs<number>) => args, (tooltipEvent: TooltipEventArgs<number>) => null);
         } });
       //handle filter and transparency
       this.svg.on('click', () => {
@@ -793,7 +794,7 @@ export class Visual implements IVisual {
 
   private appendGroupInsertAxis(marginTopStagger: number, marginTop: number, x_axis: any) {
     
-    if(this.viewModel.settings.axisSettings.displayAxisTick === true) // If display axis ticks is turned on just return
+    if(this.viewModel.settings.axisSettings.displayAxisTick === false) // If display axis ticks is turned on just return
     {
       return;
     }

@@ -292,6 +292,12 @@
                         "bool": true
                     }
                 },
+                "hideBorder": {
+                    "displayName": "Hide Border",
+                    "type": {
+                        "bool": true
+                    }
+                },
                 "displayUnits": {
                     "displayName": "Display Units",
                     "displayNameKey": "Visual_DisplayUnits",
