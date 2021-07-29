@@ -354,6 +354,10 @@ export class Visual implements IVisual {
           objectEnumeration.push({
             objectName: objectName,
             properties: {fill: {solid: {color: this.viewModel.settings.textFormatting.fill}}},selector: null})}
+        if (!this.viewModel.settings.annotationSettings.hideLabels) {
+          objectEnumeration.push({
+            objectName: objectName,
+            properties: {fill: {solid: {color: this.viewModel.settings.textFormatting.fill}}},selector: null})}
         objectEnumeration.push({
           objectName: objectName,properties: {
             labelOrientation: this.viewModel.settings.textFormatting.labelOrientation,
@@ -553,7 +557,18 @@ export class Visual implements IVisual {
     graphElement["dx"] = 0;
     graphElement["highlight"] = element.highlight;
     graphElement["stackedBarX"] = stackedBarX;
+
+    if (this.viewModel.settings.annotationSettings.hideLabels === true)
+    {
+      graphElement["annotationText"] = "";
+      this.viewModel.settings.textFormatting.annotationStyle == 'textOnly';
+    }
+
+    //if (this.viewModel.settings.textFormatting.annotationStyle === 'textOnly') {
+    //  makeAnnotations.disable(["connector"]); }
+
   }
+  
 
   private handleAxisSettings(scale: d3.ScaleLinear<number, number>, valueFormatter: vf.IValueFormatter) {
     let x_axis;
