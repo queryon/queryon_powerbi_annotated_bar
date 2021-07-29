@@ -2,7 +2,8 @@
     "visual": {
         "name": "Annotated Bar by Queryon",
         "displayName": "Annotated Bar",
-        "guid": "annotatedBarByQueryOn10945130E24B4D6AAD5741C12ECB533D",
+        "guid": "annotatedBarByQueryOn10945130E24B4D6AAD5741C12ECB5EEE",
+        "prodguid": "annotatedBarByQueryOn10945130E24B4D6AAD5741C12ECB533D",
         "visualClassName": "Visual",
         "version": "1.0.6",
         "description": "Add callouts to important bars, or just read stacked, clustered, or overlapping bar data clearly.",
