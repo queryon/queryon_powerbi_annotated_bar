@@ -120,8 +120,8 @@ function createFormatter(format, precision?: any, value?: number) {
 function visualTransform(options: VisualUpdateOptions, host: IVisualHost): AnnotatedBarViewModel {
   let dataViews = options.dataViews, defaultSettings: AnnotatedBarSettings = {
     annotationSettings: {sameAsBarColor: false,  stagger: true, spacing: 20,barHt: 30, displayUnits: 0,precision: false, overlapStyle: 'full',labelInfo: 'Auto', separator: ":", },
-    axisSettings: { axis: "None",axisColor: { solid: { color: 'gray' } }, displayAxisTick: true, fontSize: 12,fontFamily: 'Arial', bold: false,manualScale: true, barMin: false,barMax: false },
-    textFormatting: { allTextTop: false,labelOrientation: "Auto", annotationStyle: "annotationLabel",fontSize: 12, FontFamily: 'Arial',fill: { solid: { color: 'gray' } } },
+    axisSettings: { axis: "None",axisColor: { solid: { color: '#818181' } }, displayAxisTick: true, fontSize: 12,fontFamily: 'Arial', bold: false,manualScale: true, barMin: false,barMax: false },
+    textFormatting: { allTextTop: false,labelOrientation: "Auto", annotationStyle: "annotationLabel",fontSize: 12, FontFamily: 'Arial',fill: { solid: { color: '#818181' } } },
     barFormatting: {hideBorder: false}
 
     };
@@ -170,7 +170,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
     
   let annotatedBarDataPoints: AnnotatedBarDataPoint[] = [];
   //QueryOn colors to be set as default
-  let customColors = ["rgb(186,215,57)", "rgb(0, 188, 178)", "rgb(121, 118, 118)", "rgb(105,161,151)", "rgb(78,205,196)", "rgb(166,197,207)", "rgb(215,204,182)", "rgb(67,158,157)", "rgb(122,141,45)", "rgb(162,157,167)"]
+  let customColors = ["#bad739", "#00bcb2", "#797676", "#69a197", "#4ecdc4", "#a6c5cf", "#d7ccb6", "#439e9d", "#7a8d2d", "#a29da7"]
   let length = categorical.categories ? Math.max(categorical.categories[0].values.length, categorical.values[0].values.length) : dataValues.length
   for (let i = 0, len = length; i < len; i++) {
     let defaultBarColor: Fill = {solid: {color: customColors[i > 10 ? i % 10 : i]}}
@@ -203,7 +203,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
     let dataPoint = {
       colName: colName, colVal: colVal, value: dataPointValue, displayName: displayName,
       barColor: getCategoricalObjectValue<Fill>(categorical, i, 'barFormatting', 'fill', defaultBarColor).solid.color,
-      LabelColor: getCategoricalObjectValue<Fill>(categorical, i, 'textFormatting', 'fill', { solid: { color: "gray" } }).solid.color,
+      LabelColor: getCategoricalObjectValue<Fill>(categorical, i, 'textFormatting', 'fill', { solid: { color: "#818181" } }).solid.color,
       FontFamily: getCategoricalObjectValue<string>(categorical, i, 'textFormatting', 'FontFamily', "Arial"),
       fontSize: getCategoricalObjectValue<number>(categorical, i, 'textFormatting', 'fontSize', 12),
       ShowInBar: getCategoricalObjectValue<boolean>(categorical, i, 'barFormatting', 'ShowInBar', true),
@@ -218,6 +218,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       highlight: highlightsArray && highlightsArray[i] ? true : false }
     annotatedBarDataPoints.push(dataPoint);
   }
+  console.log()
   return {dataPoints: annotatedBarDataPoints,settings: annotatedBarSettings};
 }
 
@@ -355,6 +356,7 @@ export class Visual implements IVisual {
           properties: {allTextTop: this.viewModel.settings.textFormatting.allTextTop,
           },selector: null})
         if (!this.viewModel.settings.annotationSettings.sameAsBarColor) {
+          console.log(this.viewModel.settings.textFormatting.fill)
           objectEnumeration.push({
             objectName: objectName,
             properties: {fill: {solid: {color: this.viewModel.settings.textFormatting.fill}}},selector: null})}
@@ -439,7 +441,7 @@ export class Visual implements IVisual {
         return true;
     }
     return false;
-}
+  }
 
   public update(options) {
     this.events.renderingStarted(options); // Rendering Events API START
@@ -523,7 +525,7 @@ export class Visual implements IVisual {
       {
         this.svg.attr("height", this.height)
         .attr("width", this.width)
-        .attr("stroke", 'gray');
+        .attr("stroke", '#818181');
       }
     //axis settings
     let x_axis = this.handleAxisSettings(scale, valueFormatter);
