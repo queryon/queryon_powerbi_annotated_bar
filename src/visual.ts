@@ -47,7 +47,6 @@ interface AnnotatedBarSettings {
     // editMode: boolean,
     separator: string,
     sameAsBarColor: boolean,
-    hideLabels: boolean,
     hideBorder: boolean,
     barHt: number,
     displayUnits: number,
@@ -118,7 +117,7 @@ function createFormatter(format, precision?: any, value?: number) {
 
 function visualTransform(options: VisualUpdateOptions, host: IVisualHost): AnnotatedBarViewModel {
   let dataViews = options.dataViews, defaultSettings: AnnotatedBarSettings = {
-    annotationSettings: {sameAsBarColor: false, hideLabels: false, hideBorder: false, stagger: true, spacing: 20,barHt: 30, displayUnits: 0,precision: false, overlapStyle: 'full',labelInfo: 'Auto', separator: ":", },
+    annotationSettings: {sameAsBarColor: false, hideBorder: false, stagger: true, spacing: 20,barHt: 30, displayUnits: 0,precision: false, overlapStyle: 'full',labelInfo: 'Auto', separator: ":", },
     axisSettings: { axis: "None",axisColor: { solid: { color: 'gray' } }, displayAxisTick: true, fontSize: 12,fontFamily: 'Arial', bold: false,manualScale: true, barMin: false,barMax: false },
     textFormatting: { allTextTop: false,labelOrientation: "Auto", annotationStyle: "annotationLabel",fontSize: 12, FontFamily: 'Arial',fill: { solid: { color: 'gray' } } }
 
@@ -136,7 +135,6 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
   let annotatedBarSettings: AnnotatedBarSettings = {
     annotationSettings: {
       sameAsBarColor: getValue<boolean>(objects, 'annotationSettings', 'sameAsBarColor', defaultSettings.annotationSettings.sameAsBarColor),
-      hideLabels: getValue<boolean>(objects, 'annotationSettings', 'hideLabels', defaultSettings.annotationSettings.hideLabels),
       hideBorder: getValue<boolean>(objects, 'annotationSettings', 'hideBorder', defaultSettings.annotationSettings.hideBorder),
       stagger: getValue<boolean>(objects, 'annotationSettings', 'stagger', defaultSettings.annotationSettings.stagger),
       separator: getValue<string>(objects, 'annotationSettings', 'separator', defaultSettings.annotationSettings.separator),
@@ -335,7 +333,6 @@ export class Visual implements IVisual {
             labelInfo: this.viewModel.settings.annotationSettings.labelInfo,
             barHt: this.viewModel.settings.annotationSettings.barHt,
             sameAsBarColor: this.viewModel.settings.annotationSettings.sameAsBarColor,
-            hideLabels: this.viewModel.settings.annotationSettings.hideLabels,
             hideBorder: this.viewModel.settings.annotationSettings.hideBorder,
             displayUnits: this.viewModel.settings.annotationSettings.displayUnits,
             precision: this.viewModel.settings.annotationSettings.precision,
@@ -352,10 +349,6 @@ export class Visual implements IVisual {
           properties: {allTextTop: this.viewModel.settings.textFormatting.allTextTop,
           },selector: null})
         if (!this.viewModel.settings.annotationSettings.sameAsBarColor) {
-          objectEnumeration.push({
-            objectName: objectName,
-            properties: {fill: {solid: {color: this.viewModel.settings.textFormatting.fill}}},selector: null})}
-        if (!this.viewModel.settings.annotationSettings.hideLabels) {
           objectEnumeration.push({
             objectName: objectName,
             properties: {fill: {solid: {color: this.viewModel.settings.textFormatting.fill}}},selector: null})}
@@ -571,12 +564,6 @@ export class Visual implements IVisual {
     graphElement["dx"] = 0;
     graphElement["highlight"] = element.highlight;
     graphElement["stackedBarX"] = stackedBarX;
-
-    if (this.viewModel.settings.annotationSettings.hideLabels === true)
-    {
-      graphElement["annotationText"] = "";
-      this.viewModel.settings.textFormatting.annotationStyle == 'textOnly';
-    }
 
   }
   

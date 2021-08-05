@@ -59,6 +59,10 @@
                             {
                                 "displayName": "Text Only",
                                 "value": "textOnly"
+                            },
+                            {
+                                "displayName": "None",
+                                "value": "none"
                             }
                         ]
                     }
@@ -282,12 +286,6 @@
                 },
                 "sameAsBarColor": {
                     "displayName": "Text color same as bar color",
-                    "type": {
-                        "bool": true
-                    }
-                },
-                "hideLabels": {
-                    "displayName": "Hide labels",
                     "type": {
                         "bool": true
                     }
