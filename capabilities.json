@@ -16,9 +16,15 @@
         }
     ],
     "objects": {
-        "barColorSelector": {
+        "barFormatting": {
             "displayName": "Bar formatting",
             "properties": {
+                "hideBorder": {
+                    "displayName": "Hide Border",
+                    "type": {
+                        "bool": true
+                    }
+                },
                 "ShowInBar": {
                     "displayName": "Show in Bar",
                     "type": {
@@ -286,12 +292,6 @@
                 },
                 "sameAsBarColor": {
                     "displayName": "Text color same as bar color",
-                    "type": {
-                        "bool": true
-                    }
-                },
-                "hideBorder": {
-                    "displayName": "Hide Border",
                     "type": {
                         "bool": true
                     }

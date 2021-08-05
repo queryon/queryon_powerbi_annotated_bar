@@ -47,7 +47,6 @@ interface AnnotatedBarSettings {
     // editMode: boolean,
     separator: string,
     sameAsBarColor: boolean,
-    hideBorder: boolean,
     barHt: number,
     displayUnits: number,
     precision: any,
@@ -72,6 +71,9 @@ interface AnnotatedBarSettings {
     fill: any,
     FontFamily: string,
     fontSize: number
+  },
+  barFormatting: {
+    hideBorder: boolean
   }
 }
 
@@ -117,9 +119,10 @@ function createFormatter(format, precision?: any, value?: number) {
 
 function visualTransform(options: VisualUpdateOptions, host: IVisualHost): AnnotatedBarViewModel {
   let dataViews = options.dataViews, defaultSettings: AnnotatedBarSettings = {
-    annotationSettings: {sameAsBarColor: false, hideBorder: false, stagger: true, spacing: 20,barHt: 30, displayUnits: 0,precision: false, overlapStyle: 'full',labelInfo: 'Auto', separator: ":", },
+    annotationSettings: {sameAsBarColor: false,  stagger: true, spacing: 20,barHt: 30, displayUnits: 0,precision: false, overlapStyle: 'full',labelInfo: 'Auto', separator: ":", },
     axisSettings: { axis: "None",axisColor: { solid: { color: 'gray' } }, displayAxisTick: true, fontSize: 12,fontFamily: 'Arial', bold: false,manualScale: true, barMin: false,barMax: false },
-    textFormatting: { allTextTop: false,labelOrientation: "Auto", annotationStyle: "annotationLabel",fontSize: 12, FontFamily: 'Arial',fill: { solid: { color: 'gray' } } }
+    textFormatting: { allTextTop: false,labelOrientation: "Auto", annotationStyle: "annotationLabel",fontSize: 12, FontFamily: 'Arial',fill: { solid: { color: 'gray' } } },
+    barFormatting: {hideBorder: false}
 
     };
 
@@ -135,7 +138,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
   let annotatedBarSettings: AnnotatedBarSettings = {
     annotationSettings: {
       sameAsBarColor: getValue<boolean>(objects, 'annotationSettings', 'sameAsBarColor', defaultSettings.annotationSettings.sameAsBarColor),
-      hideBorder: getValue<boolean>(objects, 'annotationSettings', 'hideBorder', defaultSettings.annotationSettings.hideBorder),
+      
       stagger: getValue<boolean>(objects, 'annotationSettings', 'stagger', defaultSettings.annotationSettings.stagger),
       separator: getValue<string>(objects, 'annotationSettings', 'separator', defaultSettings.annotationSettings.separator),
       barHt: getValue<number>(objects, 'annotationSettings', 'barHt', defaultSettings.annotationSettings.barHt),
@@ -160,7 +163,11 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       annotationStyle: getValue<string>(objects, 'textFormatting', 'annotationStyle', defaultSettings.textFormatting.annotationStyle),
       fontSize: getValue<number>(objects, 'textFormatting', 'fontSize', defaultSettings.textFormatting.fontSize),
       FontFamily: getValue<string>(objects, 'textFormatting', 'FontFamily', defaultSettings.textFormatting.FontFamily),
-      fill: getValue<any>(objects, 'textFormatting', 'fill', defaultSettings.textFormatting.fill).solid.color} }
+      fill: getValue<any>(objects, 'textFormatting', 'fill', defaultSettings.textFormatting.fill).solid.color},
+    barFormatting: {
+      hideBorder: getValue<boolean>(objects, 'barFormatting', 'hideBorder', defaultSettings.barFormatting.hideBorder)
+    }}
+    
   let annotatedBarDataPoints: AnnotatedBarDataPoint[] = [];
   //QueryOn colors to be set as default
   let customColors = ["rgb(186,215,57)", "rgb(0, 188, 178)", "rgb(121, 118, 118)", "rgb(105,161,151)", "rgb(78,205,196)", "rgb(166,197,207)", "rgb(215,204,182)", "rgb(67,158,157)", "rgb(122,141,45)", "rgb(162,157,167)"]
@@ -195,11 +202,11 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
     valueFormatter = createFormatter(format, annotatedBarSettings.annotationSettings.precision, annotatedBarSettings.annotationSettings.displayUnits);
     let dataPoint = {
       colName: colName, colVal: colVal, value: dataPointValue, displayName: displayName,
-      barColor: getCategoricalObjectValue<Fill>(categorical, i, 'barColorSelector', 'fill', defaultBarColor).solid.color,
+      barColor: getCategoricalObjectValue<Fill>(categorical, i, 'barFormatting', 'fill', defaultBarColor).solid.color,
       LabelColor: getCategoricalObjectValue<Fill>(categorical, i, 'textFormatting', 'fill', { solid: { color: "gray" } }).solid.color,
       FontFamily: getCategoricalObjectValue<string>(categorical, i, 'textFormatting', 'FontFamily', "Arial"),
       fontSize: getCategoricalObjectValue<number>(categorical, i, 'textFormatting', 'fontSize', 12),
-      ShowInBar: getCategoricalObjectValue<boolean>(categorical, i, 'barColorSelector', 'ShowInBar', true),
+      ShowInBar: getCategoricalObjectValue<boolean>(categorical, i, 'barFormatting', 'ShowInBar', true),
       dx: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dx', false),
       dy: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dy', false),
       x: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'x', false),
@@ -333,7 +340,6 @@ export class Visual implements IVisual {
             labelInfo: this.viewModel.settings.annotationSettings.labelInfo,
             barHt: this.viewModel.settings.annotationSettings.barHt,
             sameAsBarColor: this.viewModel.settings.annotationSettings.sameAsBarColor,
-            hideBorder: this.viewModel.settings.annotationSettings.hideBorder,
             displayUnits: this.viewModel.settings.annotationSettings.displayUnits,
             precision: this.viewModel.settings.annotationSettings.precision,
             stagger: this.viewModel.settings.annotationSettings.stagger,
@@ -407,9 +413,15 @@ export class Visual implements IVisual {
                 barMin: this.viewModel.settings.axisSettings.barMin, barMax: this.viewModel.settings.axisSettings.barMax,
               },selector: null});}}
         break
-      case 'barColorSelector':
+      case 'barFormatting':
+        objectEnumeration.push({
+          objectName: objectName,
+          properties: {
+            hideBorder: this.viewModel.settings.barFormatting.hideBorder
+          },selector: null});
         for (let barDataPoint of dataPoints){//.sort((a, b) => (a.value > b.value) ? 1 : -1)) {
           objectEnumeration.push({
+            
             objectName: objectName, displayName: "Display " + barDataPoint.displayName + " in bar",
             properties: {ShowInBar: barDataPoint.ShowInBar
             },selector: barDataPoint.selectionId.getSelector()});
@@ -501,7 +513,7 @@ export class Visual implements IVisual {
     // set height and width of root SVG element using viewport passed by Power BI host
     this.svg.attr("height", this.height)
 
-      if (this.viewModel.settings.annotationSettings.hideBorder === true)
+      if (this.viewModel.settings.barFormatting.hideBorder === true)
       {
         this.svg.attr("height", this.height)
         .attr("width", this.width)

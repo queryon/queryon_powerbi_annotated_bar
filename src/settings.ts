@@ -4,11 +4,13 @@ export class AnnotatedBarSettings {
     public annotationSettings: AnnotationSettings;
     public axisSettings: AxisSettings;
     public textFormatting: TextFormattingSettings;
+    public barFormatting: BarFromattingSettings;
 
     constructor() {
         this.annotationSettings = new AnnotationSettings();
         this.axisSettings = new AxisSettings();
         this.textFormatting = new TextFormattingSettings();
+        this.barFormatting = new BarFromattingSettings();
     }
 
 }
@@ -45,4 +47,9 @@ export class TextFormattingSettings {
     public fill: powerbi.Fill = { solid: { color: 'gray' } };
     public FontFamily: string = 'Arial';
     public fontSize: number = 12
+}
+
+export class BarFromattingSettings {
+    public hideBorder: boolean = false;
+
 }
