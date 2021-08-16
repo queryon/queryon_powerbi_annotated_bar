@@ -16,11 +16,11 @@
         }
     ],
     "objects": {
-        "barFormatting": {
+        "barColorSelector": {
             "displayName": "Bar formatting",
             "properties": {
                 "hideBorder": {
-                    "displayName": "Hide Border",
+                    "displayName": "Display Border",
                     "type": {
                         "bool": true
                     }

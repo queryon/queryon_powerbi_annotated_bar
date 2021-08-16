@@ -72,7 +72,7 @@ interface AnnotatedBarSettings {
     FontFamily: string,
     fontSize: number
   },
-  barFormatting: {
+  barColorSelector: {
     hideBorder: boolean
   }
 }
@@ -122,7 +122,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
     annotationSettings: {sameAsBarColor: false,  stagger: true, spacing: 20,barHt: 30, displayUnits: 0,precision: false, overlapStyle: 'full',labelInfo: 'Auto', separator: ":", },
     axisSettings: { axis: "None",axisColor: { solid: { color: '#818181' } }, displayAxisTick: true, fontSize: 12,fontFamily: 'Arial', bold: false,manualScale: true, barMin: false,barMax: false },
     textFormatting: { allTextTop: false,labelOrientation: "Auto", annotationStyle: "annotationLabel",fontSize: 12, FontFamily: 'Arial',fill: { solid: { color: '#818181' } } },
-    barFormatting: {hideBorder: false}
+    barColorSelector: {hideBorder: true}
 
     };
 
@@ -164,8 +164,8 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       fontSize: getValue<number>(objects, 'textFormatting', 'fontSize', defaultSettings.textFormatting.fontSize),
       FontFamily: getValue<string>(objects, 'textFormatting', 'FontFamily', defaultSettings.textFormatting.FontFamily),
       fill: getValue<any>(objects, 'textFormatting', 'fill', defaultSettings.textFormatting.fill).solid.color},
-    barFormatting: {
-      hideBorder: getValue<boolean>(objects, 'barFormatting', 'hideBorder', defaultSettings.barFormatting.hideBorder)
+    barColorSelector: {
+      hideBorder: getValue<boolean>(objects, 'barColorSelector', 'hideBorder', defaultSettings.barColorSelector.hideBorder)
     }}
     
   let annotatedBarDataPoints: AnnotatedBarDataPoint[] = [];
@@ -202,11 +202,11 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
     valueFormatter = createFormatter(format, annotatedBarSettings.annotationSettings.precision, annotatedBarSettings.annotationSettings.displayUnits);
     let dataPoint = {
       colName: colName, colVal: colVal, value: dataPointValue, displayName: displayName,
-      barColor: getCategoricalObjectValue<Fill>(categorical, i, 'barFormatting', 'fill', defaultBarColor).solid.color,
+      barColor: getCategoricalObjectValue<Fill>(categorical, i, 'barColorSelector', 'fill', defaultBarColor).solid.color,
       LabelColor: getCategoricalObjectValue<Fill>(categorical, i, 'textFormatting', 'fill', { solid: { color: "#818181" } }).solid.color,
       FontFamily: getCategoricalObjectValue<string>(categorical, i, 'textFormatting', 'FontFamily', "Arial"),
       fontSize: getCategoricalObjectValue<number>(categorical, i, 'textFormatting', 'fontSize', 12),
-      ShowInBar: getCategoricalObjectValue<boolean>(categorical, i, 'barFormatting', 'ShowInBar', true),
+      ShowInBar: getCategoricalObjectValue<boolean>(categorical, i, 'barColorSelector', 'ShowInBar', true),
       dx: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dx', false),
       dy: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'dy', false),
       x: getCategoricalObjectValue<any>(categorical, i, 'manualPosition', 'x', false),
@@ -415,11 +415,11 @@ export class Visual implements IVisual {
                 barMin: this.viewModel.settings.axisSettings.barMin, barMax: this.viewModel.settings.axisSettings.barMax,
               },selector: null});}}
         break
-      case 'barFormatting':
+      case 'barColorSelector':
         objectEnumeration.push({
           objectName: objectName,
           properties: {
-            hideBorder: this.viewModel.settings.barFormatting.hideBorder
+            hideBorder: this.viewModel.settings.barColorSelector.hideBorder
           },selector: null});
         for (let barDataPoint of dataPoints){//.sort((a, b) => (a.value > b.value) ? 1 : -1)) {
           objectEnumeration.push({
@@ -515,7 +515,7 @@ export class Visual implements IVisual {
     // set height and width of root SVG element using viewport passed by Power BI host
     this.svg.attr("height", this.height)
 
-      if (this.viewModel.settings.barFormatting.hideBorder === true)
+      if (this.viewModel.settings.barColorSelector.hideBorder === false)
       {
         this.svg.attr("height", this.height)
         .attr("width", this.width)
