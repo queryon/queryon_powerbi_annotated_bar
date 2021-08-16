@@ -123,9 +123,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
     axisSettings: { axis: "None",axisColor: { solid: { color: '#818181' } }, displayAxisTick: true, fontSize: 12,fontFamily: 'Arial', bold: false,manualScale: true, barMin: false,barMax: false },
     textFormatting: { allTextTop: false,labelOrientation: "Auto", annotationStyle: "annotationLabel",fontSize: 12, FontFamily: 'Arial',fill: { solid: { color: '#818181' } } },
     barColorSelector: {hideBorder: true}
-
     };
-
   let viewModel: AnnotatedBarViewModel = { dataPoints: [], settings: defaultSettings };
   let objects = dataViews[0].metadata.objects;
   if (!dataViews || !dataViews[0] || !dataViews[0].categorical || !dataViews[0].categorical.values) { return viewModel; }
@@ -137,8 +135,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
   }
   let annotatedBarSettings: AnnotatedBarSettings = {
     annotationSettings: {
-      sameAsBarColor: getValue<boolean>(objects, 'annotationSettings', 'sameAsBarColor', defaultSettings.annotationSettings.sameAsBarColor),
-      
+      sameAsBarColor: getValue<boolean>(objects, 'annotationSettings', 'sameAsBarColor', defaultSettings.annotationSettings.sameAsBarColor),     
       stagger: getValue<boolean>(objects, 'annotationSettings', 'stagger', defaultSettings.annotationSettings.stagger),
       separator: getValue<string>(objects, 'annotationSettings', 'separator', defaultSettings.annotationSettings.separator),
       barHt: getValue<number>(objects, 'annotationSettings', 'barHt', defaultSettings.annotationSettings.barHt),
@@ -166,8 +163,7 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       fill: getValue<any>(objects, 'textFormatting', 'fill', defaultSettings.textFormatting.fill).solid.color},
     barColorSelector: {
       hideBorder: getValue<boolean>(objects, 'barColorSelector', 'hideBorder', defaultSettings.barColorSelector.hideBorder)
-    }}
-    
+    }}    
   let annotatedBarDataPoints: AnnotatedBarDataPoint[] = [];
   //QueryOn colors to be set as default
   let customColors = ["#bad739", "#00bcb2", "#797676", "#69a197", "#4ecdc4", "#a6c5cf", "#d7ccb6", "#439e9d", "#7a8d2d", "#a29da7"]
@@ -218,7 +214,6 @@ function visualTransform(options: VisualUpdateOptions, host: IVisualHost): Annot
       highlight: highlightsArray && highlightsArray[i] ? true : false }
     annotatedBarDataPoints.push(dataPoint);
   }
-  console.log()
   return {dataPoints: annotatedBarDataPoints,settings: annotatedBarSettings};
 }
 
@@ -356,7 +351,6 @@ export class Visual implements IVisual {
           properties: {allTextTop: this.viewModel.settings.textFormatting.allTextTop,
           },selector: null})
         if (!this.viewModel.settings.annotationSettings.sameAsBarColor) {
-          console.log(this.viewModel.settings.textFormatting.fill)
           objectEnumeration.push({
             objectName: objectName,
             properties: {fill: {solid: {color: this.viewModel.settings.textFormatting.fill}}},selector: null})}
@@ -513,20 +507,7 @@ export class Visual implements IVisual {
       .range([0, this.width - (this.padding * 2)]); //min and max width in px           
 
     // set height and width of root SVG element using viewport passed by Power BI host
-    this.svg.attr("height", this.height)
-
-      if (this.viewModel.settings.barColorSelector.hideBorder === false)
-      {
-        this.svg.attr("height", this.height)
-        .attr("width", this.width)
-        .attr("stroke", 'transparent');
-      }
-      else
-      {
-        this.svg.attr("height", this.height)
-        .attr("width", this.width)
-        .attr("stroke", '#818181');
-      }
+    this.setSVGElement()
     //axis settings
     let x_axis = this.handleAxisSettings(scale, valueFormatter);
     //Append group and insert axis
@@ -552,6 +533,24 @@ export class Visual implements IVisual {
     // handle annotations positioning
     ({ countTop, countBottom, annotationsData, makeAnnotations } = this.handleAnnotationPositions(annotationElements, scale, alignment, barElements, marginTop, thisBarHt, marginTopStagger, countTop, countBottom, annotationsData, makeAnnotations, type, categorical));
     this.events.renderingFinished(options); // Rendering Events API FINISH
+  }
+
+  private setSVGElement()
+  {
+    this.svg.attr("height", this.height)
+
+    if (this.viewModel.settings.barColorSelector.hideBorder === false)
+    {
+      this.svg.attr("height", this.height)
+      .attr("width", this.width)
+      .attr("stroke", 'transparent');
+    }
+    else
+    {
+      this.svg.attr("height", this.height)
+      .attr("width", this.width)
+      .attr("stroke", '#818181');
+    }
   }
 
   private setGraphElementValuesFromViewModel(graphElement: {}, displayName: string, element: AnnotatedBarDataPoint, annotationColor: any, elementTop: boolean, annotationSize: number, annotationFont: string, labelOrientation: string, stackedBarX: any) {
