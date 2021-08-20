@@ -437,9 +437,11 @@ export class Visual implements IVisual {
 
   public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
     //Push custom attributes to property pane, as well as dynamic names.
+    
     let objectName = options.objectName;
     let objectEnumeration: VisualObjectInstance[] = [];
     let dataPoints = this.viewModel.dataPoints.concat()
+
     switch (objectName) {
       case 'annotationSettings':
         this.enumerateAnnotationSettings(objectEnumeration, objectName)
